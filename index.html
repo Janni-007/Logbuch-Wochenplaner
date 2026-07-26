@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logbuch-Wochenplaner v0.15.11</title>
+<title>Logbuch-Wochenplaner v0.15.12</title>
 <style>
 :root{--navy:#123B63;--navy2:#0B2A46;--teal:#0D7C86;--bg:#F3F6FA;--card:#fff;--text:#17324D;--muted:#6A7E91;--line:#D7E0E8;--green:#2F855A;--green2:#1F6B45;--greenbg:#E3F3E9;--red:#C23B3B;--redbg:#FBE7E7;--amber:#D99A17;--amberbg:#FFF3D6;--input:#FFF1A8;--blue:#145c9e;--purple:#6b3fa0}
 *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -40,7 +40,7 @@ button,input,select{font:inherit}button{border:0;border-radius:8px;padding:9px 1
 .trip{position:absolute;top:23px;height:20px;border-radius:6px;background:#76b852;border:1px solid #4c9234;z-index:4;cursor:grab;touch-action:none;min-width:3px;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;text-shadow:0 1px 1px rgba(0,0,0,.3)}.trip.selected{outline:3px solid rgba(18,59,99,.35)}.trip.locked{background:var(--red);border-color:#9e2727;cursor:pointer}.trip:active{cursor:grabbing}.handle{position:absolute;top:19px;bottom:19px;width:13px;z-index:7;cursor:ew-resize;touch-action:none}.handle:before{content:"";position:absolute;left:5px;top:0;bottom:0;width:4px;border-radius:4px;background:currentColor;box-shadow:0 0 0 1px #fff}.handle.start{color:var(--blue);transform:translateX(-6px)}.handle.end{color:var(--purple);transform:translateX(-6px)}
 .block-line{position:absolute;top:0;bottom:0;width:4px;z-index:6;transform:translateX(-50%);pointer-events:none}.block-line.start{background:#0a8f3c}.block-line.end{background:#d32727}.block-line.start:after,.block-line.end:after{content:"";position:absolute;top:3px;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent}.block-line.start:after{left:4px;border-left:9px solid #0a8f3c}.block-line.end:after{right:4px;border-right:9px solid #d32727}
 .day-footer{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}.trip-info{font-size:12px;color:var(--muted)}.selected-panel{display:none;background:#eef7f1;border:1px solid #b9ddc5;border-radius:9px;padding:8px;margin-top:8px}.selected-panel.show{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.selected-panel b{color:var(--green2)}
-.trip-list{display:grid;gap:6px;margin-top:8px}.trip-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#eef7f1;border:1px solid #b9ddc5;border-radius:9px;padding:8px}.trip-row b{color:var(--green2)}.trip-row.locked{background:#fff0f0;border-color:#e7aaaa}.trip-row.locked b{color:var(--red)}.trip-status{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:900;white-space:nowrap}.trip-status.planned{background:#e3f3e9;border:1px solid #82c59b;color:#17643c}.trip-status.saved{background:#fbe7e7;border:1px solid #e1a0a0;color:#a52d2d}.fishday-badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#e3f3e9;border:1px solid #82c59b;color:#17643c;font-size:11px;font-weight:900;white-space:nowrap}.trip-row.selected{box-shadow:0 0 0 3px rgba(18,59,99,.14)}
+.trip-list{display:grid;gap:6px;margin-top:8px}.trip-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#eef7f1;border:1px solid #b9ddc5;border-radius:9px;padding:8px}.trip-row b{color:var(--green2)}.trip-row.locked{background:#fff0f0;border-color:#e7aaaa}.trip-row.locked b{color:var(--red)}.trip-status{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:900;white-space:nowrap}.trip-status.planned{background:#e3f3e9;border:1px solid #82c59b;color:#17643c}.trip-status.saved{background:#fbe7e7;border:1px solid #e1a0a0;color:#a52d2d}.fishday-badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#e3f3e9;border:1px solid #82c59b;color:#17643c;font-size:11px;font-weight:900;white-space:nowrap}.fishday-badge.continues{background:#eef2f5;border-color:#c6d1da;color:#526a7d}.trip-row.selected{box-shadow:0 0 0 3px rgba(18,59,99,.14)}
 .legend{font-size:11px;color:var(--muted);margin:5px 0}.notice{padding:9px 11px;border-radius:8px;background:var(--amberbg);color:#795000;font-weight:700;display:none}.notice.show{display:block}
 @media(max-width:800px){main{padding:8px}.settings{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.day-head{grid-template-columns:1fr}.timeline,.hour-row{min-width:780px}.setting-row{grid-template-columns:125px 1fr}.day-actions{justify-content:flex-start}}
 
@@ -109,7 +109,7 @@ button,input,select{font:inherit}button{border:0;border-radius:8px;padding:9px 1
 
 </style>
 </head><body>
-<header><div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.11</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div><span id="backupQuick" class="backup-quick warning" title="Aktiver Datenstand">💾 Lokale Daten</span></header>
+<header><div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.12</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div><span id="backupQuick" class="backup-quick warning" title="Aktiver Datenstand">💾 Lokale Daten</span></header>
 <main>
 <div class="view-tabs">
   <button class="view-tab active" id="showPlanning">Planung</button>
@@ -169,7 +169,7 @@ function updateBackupSource(){const el=$('backupSource'),dash=$('backupDashboard
 function downloadBackup(){
   const payload={
     app:'Logbuch-Wochenplaner',
-    version:'0.15.11',
+    version:'0.15.12',
     exportedAt:new Date().toISOString(),
     weekStart:$('weekStart').value,
     trips,
@@ -266,16 +266,37 @@ function dayTransitionHtml(v){
   }
   return html;
 }
-function fishDayLabelForTrip(trip,weekStartDate){
+function fishDayInfoForTrip(trip,weekStartDate){
   const ws=new Date(weekStartDate);ws.setHours(0,0,0,0);
   const we=new Date(ws.getTime()+7*86400000);
   const allBlocks=buildBlocks(trips);
   const weekTripSet=trips.filter(t=>new Date(t.in)>ws&&new Date(t.out)<we);
   const weekBlocks=allBlocks.filter(b=>weekTripSet.some(t=>new Date(t.in)>b.start&&new Date(t.out)<b.end));
   const out=new Date(trip.out),inn=new Date(trip.in);
-  const touched=weekBlocks.map((b,i)=>({b,n:i+1})).filter(x=>inn>x.b.start&&out<x.b.end).map(x=>x.n);
-  if(!touched.length)return 'Kein Fischtag';
-  return touched.length===1?`Fischtag ${touched[0]}`:`Fischtage ${touched.join(' + ')}`;
+
+  const touched=weekBlocks
+    .map((b,i)=>({b,n:i+1}))
+    .filter(x=>inn>x.b.start&&out<x.b.end);
+
+  const newlyCreated=touched
+    .filter(x=>x.b.start>=out&&x.b.start<inn)
+    .map(x=>x.n);
+
+  if(newlyCreated.length===1){
+    return {label:`Fischtag ${newlyCreated[0]}`,isNew:true};
+  }
+  if(newlyCreated.length>1){
+    return {label:`Fischtage ${newlyCreated.join(' + ')}`,isNew:true};
+  }
+
+  const current=touched.map(x=>x.n);
+  if(current.length===1){
+    return {label:`kein neuer Fischtag · Block ${current[0]}`,isNew:false};
+  }
+  if(current.length>1){
+    return {label:`kein neuer Start · Blöcke ${current.join(' + ')}`,isNew:false};
+  }
+  return {label:'kein Fischtag',isNew:false};
 }
 
 const BSH_MOON_PHASES_2026={
@@ -490,7 +511,7 @@ function dayHtml(date){
   }
   let hours='';
   for(const t of fullHourTicks(v))hours+=`<span class="hour-label" style="left:${pos(t,v)}%">${String(t.getHours()).padStart(2,'0')}</span>`;
-  const tripList=ownedTrips.length?`<div class="trip-list">${ownedTrips.map(t=>`<div class="trip-row${t.locked?' locked':''}${t.id===selectedTripId?' selected':''}" data-select-id="${t.id}"><b>R${t.number}</b><span>${wd(new Date(t.out))} ${fmtDate(new Date(t.out))} ${fmtTime(new Date(t.out))} – ${wd(new Date(t.in))} ${fmtDate(new Date(t.in))} ${fmtTime(new Date(t.in))}</span><span class="fishday-badge">${fishDayLabelForTrip(t,weekStartDate)}</span><span class="trip-status ${t.locked?'saved':'planned'}">${t.locked?'🔒 gespeichert/gefahren':'geplant'}</span><button class="danger" data-delete-id="${t.id}">Reise löschen</button></div>`).join('')}</div>`:'';
+  const tripList=ownedTrips.length?`<div class="trip-list">${ownedTrips.map(t=>{const fd=fishDayInfoForTrip(t,weekStartDate);return `<div class="trip-row${t.locked?' locked':''}${t.id===selectedTripId?' selected':''}" data-select-id="${t.id}"><b>R${t.number}</b><span>${wd(new Date(t.out))} ${fmtDate(new Date(t.out))} ${fmtTime(new Date(t.out))} – ${wd(new Date(t.in))} ${fmtDate(new Date(t.in))} ${fmtTime(new Date(t.in))}</span><span class="fishday-badge${fd.isNew?'':' continues'}">${fd.label}</span><span class="trip-status ${t.locked?'saved':'planned'}">${t.locked?'🔒 gespeichert/gefahren':'geplant'}</span><button class="danger" data-delete-id="${t.id}">Reise löschen</button></div>`;}).join('')}</div>`:'';
   const savedHere=ownedTrips.filter(t=>t.locked).length;
   const saveDisabled=!selectedHere||selected.locked?' disabled':'';
   const editDisabled=!selectedHere||!selected.locked?' disabled':'';
