@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logbuch-Wochenplaner v0.15.8</title>
+<title>Logbuch-Wochenplaner v0.15.11</title>
 <style>
 :root{--navy:#123B63;--navy2:#0B2A46;--teal:#0D7C86;--bg:#F3F6FA;--card:#fff;--text:#17324D;--muted:#6A7E91;--line:#D7E0E8;--green:#2F855A;--green2:#1F6B45;--greenbg:#E3F3E9;--red:#C23B3B;--redbg:#FBE7E7;--amber:#D99A17;--amberbg:#FFF3D6;--input:#FFF1A8;--blue:#145c9e;--purple:#6b3fa0}
 *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -109,7 +109,7 @@ button,input,select{font:inherit}button{border:0;border-radius:8px;padding:9px 1
 
 </style>
 </head><body>
-<header><div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.8</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div><span id="backupQuick" class="backup-quick warning" title="Aktiver Datenstand">💾 Lokale Daten</span></header>
+<header><div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.11</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div><span id="backupQuick" class="backup-quick warning" title="Aktiver Datenstand">💾 Lokale Daten</span></header>
 <main>
 <div class="view-tabs">
   <button class="view-tab active" id="showPlanning">Planung</button>
@@ -141,9 +141,10 @@ button,input,select{font:inherit}button{border:0;border-radius:8px;padding:9px 1
       <label><b>Jahr</b></label><select id="archiveYear"></select>
       <label><b>Kalenderwoche</b></label><select id="archiveWeek"><option value="all">Alle Wochen</option></select>
       <button class="secondary" id="archiveReset">Alle anzeigen</button>
+      <button class="secondary" id="archiveRepair">Vergangene Reisen übernehmen</button>
       <span class="archive-summary" id="archiveSummary"></span>
     </div>
-    <div class="legend">Im Archiv erscheinen nur gespeicherte/gefahrene Reisen. Rot = gespeichert · BLE-Tage nach 24-Stunden-Blocklogik · Kalendertage nur als Vergleichsinformation.</div>
+    <div class="legend">Im Archiv erscheinen nur gespeicherte/gefahrene Reisen. Fehlen ältere Reisen nach einem Backup-Import, können sie über „Vergangene Reisen übernehmen“ nachträglich als gefahren gespeichert werden. BLE-Tage nach 24-Stunden-Blocklogik · Kalendertage nur als Vergleichsinformation.</div>
     <div id="archiveList"></div><div class="back-to-top-wrap"><button class="back-to-top" id="archiveBackToTop">↑ Nach oben</button></div>
   </section>
 </div>
@@ -168,7 +169,7 @@ function updateBackupSource(){const el=$('backupSource'),dash=$('backupDashboard
 function downloadBackup(){
   const payload={
     app:'Logbuch-Wochenplaner',
-    version:'0.15.8',
+    version:'0.15.11',
     exportedAt:new Date().toISOString(),
     weekStart:$('weekStart').value,
     trips,
@@ -191,13 +192,25 @@ function importBackupFile(file){
       if(!data||!Array.isArray(data.trips))throw new Error('Ungültige Backupdatei');
       if(!confirm('Vorhandene Planung durch dieses Backup ersetzen?'))return;
       trips=data.trips.map(t=>({...t,locked:t.locked===true}));
+      const pastOpen=pastUnlockedTrips(trips);
+      let migratedPast=0;
+      if(pastOpen.length&&confirm(
+        `Dieses Backup enthält ${pastOpen.length} bereits vergangene, aber noch nicht gespeicherte Reise${pastOpen.length===1?'':'n'}.\n\n`+
+        `Sollen diese Reisen als gefahren/gespeichert übernommen und im Archiv angezeigt werden?\n\n`+
+        `Zukünftige Planungsreisen bleiben unverändert grün.`
+      )){
+        migratedPast=migratePastTripsToArchive(trips);
+      }
       if(data.settings&&typeof data.settings==='object')Object.entries(data.settings).forEach(([k,v])=>{if($(k))$(k).value=v});
       if(data.weekStart)$('weekStart').value=data.weekStart;
       const meta={fileName:file.name,importedAt:new Date().toISOString(),exportedAt:data.exportedAt||null,weekStart:data.weekStart||null,version:data.version||null};
       localStorage.setItem(BACKUP_META_KEY,JSON.stringify(meta));
       selectedTripId=null;dayViews={};renumber();save();
       try{
-        render();updateBackupSource();show('Backup wurde eingelesen.');
+        render();updateBackupSource();
+        show(migratedPast
+          ?`Backup wurde eingelesen. ${migratedPast} vergangene Reise${migratedPast===1?' wurde':'n wurden'} als gespeichert/gefahren ins Archiv übernommen.`
+          :'Backup wurde eingelesen.');
       }catch(displayErr){
         console.error(displayErr);
         alert('Das Backup wurde gespeichert, aber die Anzeige konnte nicht vollständig aufgebaut werden: '+displayErr.message);
@@ -313,26 +326,100 @@ function archiveAvailableYears(){const years=[...new Set(trips.filter(t=>t.locke
 function archiveAvailableWeeks(year){return [...new Set(trips.filter(t=>t.locked&&isoWeekInfo(new Date(t.out)).year===year).map(t=>isoWeekInfo(new Date(t.out)).week))].sort((a,b)=>a-b)}
 function archiveFilteredTrips(){const year=Number(archiveFilterYear||archiveAvailableYears().at(-1));return trips.filter(t=>{const iw=isoWeekInfo(new Date(t.out));return t.locked&&iw.year===year&&(archiveFilterWeek==='all'||iw.week===Number(archiveFilterWeek))}).sort((a,b)=>new Date(a.out)-new Date(b.out))}
 function archiveTouchedBlocks(filtered){const allBlocks=buildBlocks(trips.filter(t=>t.locked));return allBlocks.filter(b=>filtered.some(t=>{const o=new Date(t.out),i=new Date(t.in);return i>b.start&&o<b.end}))}
-function archiveDayHtml(date,list,allBlocks){
-  const key=localKey(date),v=viewForDay(key),sorted=[...list].sort((a,b)=>new Date(a.out)-new Date(b.out));
-  let inner='';
-  for(const tick of fullHourTicks(v))inner+=`<i class="grid-line" style="left:${pos(tick,v)}%"></i>`;
-  const touched=new Set();
+function archiveViewForDay(date,list,allBlocks,archiveDayKeys){
+  const key=localKey(date);
+  const normal=viewForDay(key);
+  const sorted=[...list].sort((a,b)=>new Date(a.out)-new Date(b.out));
+  const touchedBlocks=[];
+
   for(const t of sorted){
-    const o=new Date(t.out),i=new Date(t.in),l=pos(o,v),r=pos(i,v),c=clipped(l,r);
+    const out=new Date(t.out),inn=new Date(t.in);
+    for(const b of allBlocks){
+      if(inn>b.start&&out<b.end&&!touchedBlocks.includes(b))touchedBlocks.push(b);
+    }
+  }
+
+  const missingEnd=touchedBlocks.find(b=>{
+    const end=b.end.getTime();
+    if(end>=normal.start&&end<=normal.end)return false;
+    return !archiveDayKeys.has(localKey(b.end));
+  });
+
+  if(!missingEnd){
+    return {start:normal.start,end:normal.end,shifted:false};
+  }
+
+  const tripTimes=sorted.flatMap(t=>[new Date(t.out).getTime(),new Date(t.in).getTime()]);
+  const blockTimes=touchedBlocks.flatMap(b=>[b.start.getTime(),b.end.getTime()]);
+  const earliest=Math.min(...tripTimes,...blockTimes);
+  const latest=Math.max(...tripTimes,...blockTimes);
+
+  const leftMargin=7*3600000;
+  const rightMargin=3*3600000;
+  const minimumSpan=VIEW_HOURS*3600000;
+  const requiredSpan=(latest-earliest)+leftMargin+rightMargin;
+  const span=Math.max(minimumSpan,requiredSpan);
+
+  let start=earliest-leftMargin;
+  const roundedStart=new Date(start);
+  roundedStart.setMinutes(0,0,0);
+  start=roundedStart.getTime();
+
+  let end=start+span;
+  const requiredEnd=latest+rightMargin;
+  if(end<requiredEnd){
+    end=requiredEnd;
+    start=end-span;
+    const shiftedStart=new Date(start);
+    shiftedStart.setMinutes(0,0,0);
+    start=shiftedStart.getTime();
+    end=start+span;
+  }
+
+  return {start,end,shifted:true};
+}
+function archiveDayHtml(date,list,allBlocks,archiveDayKeys){
+  const key=localKey(date),sorted=[...list].sort((a,b)=>new Date(a.out)-new Date(b.out));
+  const v=archiveViewForDay(date,sorted,allBlocks,archiveDayKeys);
+  let inner='';
+
+  for(const tick of fullHourTicks(v)){
+    inner+=`<i class="grid-line" style="left:${pos(tick,v)}%"></i>`;
+  }
+
+  for(const b of allBlocks){
+    const sp=pos(b.start,v),ep=pos(b.end,v);
+    if(sp>=0&&sp<=100){
+      inner+=`<div class="archive-block-line start" style="left:${sp}%" title="Blockbeginn ${fmtDate(b.start)} ${fmtTime(b.start)}"></div><span class="archive-block-time start" style="left:${sp}%">${fmtTime(b.start)}</span>`;
+    }
+    if(ep>=0&&ep<=100){
+      inner+=`<div class="archive-block-line end" style="left:${ep}%" title="Blockende ${fmtDate(b.end)} ${fmtTime(b.end)}"></div><span class="archive-block-time end" style="left:${ep}%">${fmtTime(b.end)}</span>`;
+    }
+  }
+
+  for(const t of sorted){
+    const o=new Date(t.out),i=new Date(t.in),c=clipped(pos(o,v),pos(i,v));
     if(c.width<=0)continue;
     inner+=`<div class="archive-trip locked${t.id===selectedTripId?' selected':''}" data-archive-trip="${t.id}" style="left:${c.left}%;width:${c.width}%" title="R${t.number}: ${fmtDate(o)} ${fmtTime(o)} – ${fmtDate(i)} ${fmtTime(i)}"><span class="archive-trip-label">R${t.number}</span></div>`;
-    const block=allBlocks.find(b=>o>=b.start&&o<b.end);
-    if(block)touched.add(block);
   }
-  for(const b of touched){
-    const sp=pos(b.start,v),ep=pos(b.end,v);
-    if(sp>=0&&sp<=100)inner+=`<div class="archive-block-line start" style="left:${sp}%"></div><span class="archive-block-time start" style="left:${sp}%">${fmtTime(b.start)}</span>`;
-    if(ep>=0&&ep<=100)inner+=`<div class="archive-block-line end" style="left:${ep}%"></div><span class="archive-block-time end" style="left:${ep}%">${fmtTime(b.end)}</span>`;
-  }
+
   const firstStart=new Date(sorted[0].out),lastEnd=new Date(sorted[sorted.length-1].in);
   const range=`Reisezeitraum: ${wd(firstStart)} ${fmtDate(firstStart)} ${fmtTime(firstStart)} – ${wd(lastEnd)} ${fmtDate(lastEnd)} ${fmtTime(lastEnd)}`;
+
   return `<div class="archive-day"><div class="archive-day-head"><div><div>${wd(date)} · ${fmtDate(date)}</div><div class="archive-trip-range">${range}</div></div><span class="archive-day-count">${sorted.length} Reise${sorted.length===1?'':'n'}</span></div><div class="archive-timeline-wrap"><div class="archive-date-row">${dayTransitionHtml(v)}</div><div class="archive-timeline">${inner}</div></div></div>`;
+}
+function pastUnlockedTrips(list=trips){
+  const now=Date.now();
+  return list.filter(t=>{
+    if(t.locked)return false;
+    const end=new Date(t.in).getTime();
+    return Number.isFinite(end)&&end<now;
+  });
+}
+function migratePastTripsToArchive(list=trips){
+  const candidates=pastUnlockedTrips(list);
+  for(const t of candidates)t.locked=true;
+  return candidates.length;
 }
 function calendarDaysForTrips(list){
   const days=new Set();
@@ -355,11 +442,11 @@ function archiveHtml(){
   if(!filtered.length)return '<div class="archive-empty">Für diese Auswahl sind keine gespeicherten/gefahrenen Reisen vorhanden.</div>';
   const groups=new Map();
   for(const t of filtered){const key=localKey(new Date(t.out));if(!groups.has(key))groups.set(key,[]);groups.get(key).push(t)}
-  const entries=[...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0])),weekGroups=new Map();
+  const entries=[...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0])),archiveDayKeys=new Set(entries.map(([key])=>key)),weekGroups=new Map();
   for(const [key,list] of entries){const d=new Date(key+'T00:00:00'),iw=isoWeekInfo(d),wk=`${iw.year}-${String(iw.week).padStart(2,'0')}`;if(!weekGroups.has(wk))weekGroups.set(wk,{iw,days:[]});weekGroups.get(wk).days.push({date:d,list})}
   return [...weekGroups.values()].map(g=>{
     const weekTrips=g.days.flatMap(x=>x.list),weekBlocks=archiveTouchedBlocks(weekTrips),weekCalendarDays=calendarDaysForTrips(weekTrips),weekHours=weekTrips.reduce((s,t)=>s+(new Date(t.in)-new Date(t.out))/3600000,0);
-    return `<section class="archive-week"><div class="archive-week-head"><span>KW ${String(g.iw.week).padStart(2,'0')} · ${g.iw.year}</span><span>${weekTrips.length} Reisen · ${weekBlocks.length} BLE-Tage · ${weekCalendarDays} Kalendertage (Vergleich) · ${weekHours.toFixed(1).replace('.',',')} h</span></div>${g.days.map(x=>archiveDayHtml(x.date,x.list,allBlocks)).join('')}</section>`;
+    return `<section class="archive-week"><div class="archive-week-head"><span>KW ${String(g.iw.week).padStart(2,'0')} · ${g.iw.year}</span><span>${weekTrips.length} Reisen · ${weekBlocks.length} BLE-Tage · ${weekCalendarDays} Kalendertage (Vergleich) · ${weekHours.toFixed(1).replace('.',',')} h</span></div>${g.days.map(x=>archiveDayHtml(x.date,x.list,allBlocks,archiveDayKeys)).join('')}</section>`;
   }).join('');
 }
 function syncArchiveFilters(){const yearSel=$('archiveYear'),weekSel=$('archiveWeek'),years=archiveAvailableYears();if(!archiveFilterYear||!years.includes(Number(archiveFilterYear)))archiveFilterYear=String(years.at(-1));yearSel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');yearSel.value=archiveFilterYear;const weeks=archiveAvailableWeeks(Number(archiveFilterYear));if(archiveFilterWeek!=='all'&&!weeks.includes(Number(archiveFilterWeek)))archiveFilterWeek='all';weekSel.innerHTML='<option value="all">Alle Wochen</option>'+weeks.map(w=>`<option value="${w}">KW ${String(w).padStart(2,'0')}</option>`).join('');weekSel.value=archiveFilterWeek}
@@ -434,6 +521,22 @@ $('showArchive').onclick=()=>{
 $('archiveYear').onchange=()=>{archiveFilterYear=$('archiveYear').value;archiveFilterWeek='all';renderArchive();};
 $('archiveWeek').onchange=()=>{archiveFilterWeek=$('archiveWeek').value;renderArchive();};
 $('archiveReset').onclick=()=>{archiveFilterYear=String(archiveAvailableYears().at(-1));archiveFilterWeek='all';renderArchive();};
+$('archiveRepair').onclick=()=>{
+  const candidates=pastUnlockedTrips();
+  if(!candidates.length){
+    show('Es gibt keine vergangenen ungespeicherten Reisen, die übernommen werden können.');
+    return;
+  }
+  if(!confirm(
+    `${candidates.length} vergangene, noch nicht gespeicherte Reise${candidates.length===1?'':'n'} als gefahren/gespeichert übernehmen?\n\n`+
+    `Sie werden rot, gesperrt und anschließend im Archiv angezeigt.`
+  ))return;
+  const count=migratePastTripsToArchive();
+  selectedTripId=null;
+  save();
+  render();
+  show(`${count} vergangene Reise${count===1?' wurde':'n wurden'} ins Archiv übernommen.`);
+};
 
 function renderBackupStatus(){
   const el=$('backupQuick');
