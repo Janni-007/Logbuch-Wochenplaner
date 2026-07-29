@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logbuch-Wochenplaner v0.15.21</title>
+<title>Logbuch-Wochenplaner v0.15.22</title>
 <style>
 :root{--navy:#123B63;--navy2:#0B2A46;--teal:#0D7C86;--bg:#F3F6FA;--card:#fff;--text:#17324D;--muted:#6A7E91;--line:#D7E0E8;--green:#2F855A;--green2:#1F6B45;--greenbg:#E3F3E9;--red:#C23B3B;--redbg:#FBE7E7;--amber:#D99A17;--amberbg:#FFF3D6;--input:#FFF1A8;--blue:#145c9e;--purple:#6b3fa0}
 *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -241,7 +241,7 @@ window.dispatchEvent(new Event("logbuch-firebase-ready"));
 
 </head><body>
 <header>
-<div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.21</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div>
+<div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.22</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div>
 <div class="header-actions">
   <div id="cloudBox" class="cloud-box">
     <div id="cloudStatus" class="cloud-status"><b>☁ Online-Speicher</b><span>Nicht angemeldet</span></div>
@@ -393,7 +393,7 @@ function cloudPayload(){
   cloudLastSentRevision=revision;
   return {
     schemaVersion:1,
-    appVersion:'0.15.21',
+    appVersion:'0.15.22',
     revision,
     clientId:cloudClientId,
     updatedAtClient:new Date().toISOString(),
@@ -558,7 +558,7 @@ function downloadBackup(){
   const fileName=`Logbuch-Planer_${localKey(now)}_${device}_${numberText}.json`;
   const payload={
     app:'Logbuch-Wochenplaner',
-    version:'0.15.21',
+    version:'0.15.22',
     exportedAt:now.toISOString(),
     backupDevice:device,
     backupNumber,
@@ -869,7 +869,18 @@ function windowsForView(v){const s=settings(),items=[];const start=new Date(v.st
 function tideInfoHtml(w){const st=new Date(w.start),en=new Date(w.end),nw=new Date(w.nw),hw=new Date(w.hw);const cross=localKey(st)!==localKey(en);return `<span class="tide-info ${w.type}"><b>${w.label}</b> ${fmtDate(st)} ${fmtTime(st)}–${cross?fmtDate(en)+' ':''}${fmtTime(en)} <span class="basis">NW ${fmtTime(nw)} → HW ${fmtTime(hw)}</span></span>`}
 function buildBlocks(list){const result=[];const sorted=[...list].sort((a,b)=>new Date(a.out)-new Date(b.out));for(const t of sorted){const start=new Date(t.out),end=new Date(t.in);let active=result.find(b=>start>=b.start&&start<b.end);if(!active){active={start:new Date(start),end:new Date(start.getTime()+86400000)};result.push(active)}while(end>active.end){const boundary=new Date(active.end);active={start:boundary,end:new Date(boundary.getTime()+86400000)};result.push(active)}}return result.sort((a,b)=>a.start-b.start)}
 function weekTrips(){const ws=new Date($('weekStart').value+'T00:00:00'),we=new Date(ws.getTime()+7*86400000);return trips.filter(t=>new Date(t.out)<we&&new Date(t.in)>ws)}
-function renumber(){[...trips].sort((a,b)=>new Date(a.out)-new Date(b.out)).forEach((t,i)=>t.number=i+1)}
+function renumber(){
+  const counters=new Map();
+  [...trips]
+    .sort((a,b)=>new Date(a.out)-new Date(b.out))
+    .forEach(t=>{
+      const outDate=new Date(t.out);
+      const year=Number.isFinite(outDate.getTime())?outDate.getFullYear():'ohne-jahr';
+      const next=(counters.get(year)||0)+1;
+      counters.set(year,next);
+      t.number=next;
+    });
+}
 function recommendedTrip(key){const r=TIDES[key],s=settings();if(!r)return null;const dayStart=new Date(key+'T00:00:00'),dayEnd=new Date(dayStart.getTime()+86400000);const wins=pairWindows(r,s.depAfterNW,s.depAfterHW,'dep').filter(w=>new Date(w.start)>=dayStart&&new Date(w.start)<dayEnd).sort((a,b)=>new Date(a.start)-new Date(b.start));const w=wins[1]||wins[0];if(!w)return null;const hours=(r.trip_type==='Kurzreise'?s.shortHours:s.longHours);const start=new Date(w.start),end=new Date(w.end),target=new Date(key+'T18:00:00');let out=new Date(Math.min(Math.max(target.getTime(),start.getTime()),end.getTime()));const inn=new Date(out.getTime()+hours*3600000);return{out,inn}}
 function addTrip(key){const rec=recommendedTrip(key);if(!rec){show('Für diesen Tag wurde kein gültiges Auslauffenster gefunden.');return}const overlaps=trips.some(t=>rec.out<new Date(t.in)&&rec.inn>new Date(t.out));if(overlaps){show('Die vorgeschlagene Reise überschneidet sich mit einer vorhandenen Reise.');return}trips.push({id:crypto.randomUUID(),out:rec.out.toISOString(),in:rec.inn.toISOString(),locked:false});selectedTripId=trips.at(-1).id;renumber();save();render()}
 function deleteSelected(){if(!selectedTripId)return;trips=trips.filter(t=>t.id!==selectedTripId);selectedTripId=null;renumber();save();render()}
