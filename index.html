@@ -4,10 +4,94 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Logbuch-Wochenplaner v0.15.32</title>
-<meta http-equiv="refresh" content="0; url=Logbuch_Wochenplaner_v0.15.32_Decksmann_Bild_teilen_kopieren.html">
-<script>location.replace('Logbuch_Wochenplaner_v0.15.32_Decksmann_Bild_teilen_kopieren.html');</script>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#F3F6FA}
+#planner{display:block;width:100%;height:100%;border:0;background:#F3F6FA}
+#boot{position:fixed;inset:0;display:grid;place-items:center;font:700 15px Segoe UI,Arial,sans-serif;color:#17324D;background:#F3F6FA;z-index:5}
+#boot.hidden{display:none}
+</style>
 </head>
 <body>
-<p>Logbuch-Wochenplaner v0.15.32 wird geöffnet. <a href="Logbuch_Wochenplaner_v0.15.32_Decksmann_Bild_teilen_kopieren.html">Hier klicken, falls die Weiterleitung nicht startet.</a></p>
+<div id="boot">Logbuch-Wochenplaner v0.15.32 wird geladen …</div>
+<iframe id="planner" title="Logbuch-Wochenplaner v0.15.32" src="Logbuch_Wochenplaner_v0.15.32_Decksmann_Bild_teilen_kopieren.html"></iframe>
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut,
+  onAuthStateChanged, setPersistence, browserLocalPersistence
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import {
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  doc, getDoc, setDoc, onSnapshot, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+const firebaseConfig={
+  apiKey:"AIzaSyCl5bcJErUTZqgaPPIPSYLDB0nftQLjJsg",
+  authDomain:"logbuch-wochenplaner.firebaseapp.com",
+  projectId:"logbuch-wochenplaner",
+  storageBucket:"logbuch-wochenplaner.firebasestorage.app",
+  messagingSenderId:"590029495141",
+  appId:"1:590029495141:web:6d8271bd76d81fe0c39f8c"
+};
+
+const app=getApps().length?getApps()[0]:initializeApp(firebaseConfig);
+const auth=getAuth(app);
+await setPersistence(auth,browserLocalPersistence);
+let db;
+try{
+  db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
+}catch(_e){
+  const fs=await import("https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js");
+  db=fs.getFirestore(app);
+}
+const provider=new GoogleAuthProvider();
+provider.setCustomParameters({prompt:"select_account"});
+const stateRef=uid=>doc(db,"users",uid,"planner","main");
+
+const bridge={
+  signIn:()=>signInWithPopup(auth,provider),
+  signOut:()=>signOut(auth),
+  getState:async uid=>{const s=await getDoc(stateRef(uid));return s.exists()?s.data():null},
+  writeState:(uid,payload)=>setDoc(stateRef(uid),{...payload,updatedAtServer:serverTimestamp()}),
+  listen:(uid,next,error)=>onSnapshot(stateRef(uid),{includeMetadataChanges:true},s=>next({
+    exists:s.exists(),data:s.exists()?s.data():null,
+    fromCache:s.metadata.fromCache,hasPendingWrites:s.metadata.hasPendingWrites
+  }),error)
+};
+
+const frame=document.getElementById('planner');
+const boot=document.getElementById('boot');
+let currentUser=null;
+
+function userDetail(user){
+  return user?{uid:user.uid,email:user.email||'',displayName:user.displayName||'',photoURL:user.photoURL||''}:null;
+}
+function installBridge(){
+  try{
+    const w=frame.contentWindow;
+    if(!w||!w.document)return false;
+    w.LogbuchFirebase=bridge;
+    w.dispatchEvent(new Event('logbuch-firebase-ready'));
+    w.dispatchEvent(new CustomEvent('logbuch-firebase-auth',{detail:userDetail(currentUser)}));
+    boot.classList.add('hidden');
+    return true;
+  }catch(_e){return false}
+}
+
+frame.addEventListener('load',()=>{
+  let tries=0;
+  const timer=setInterval(()=>{
+    tries++;
+    if(installBridge()||tries>80)clearInterval(timer);
+  },100);
+});
+
+onAuthStateChanged(auth,user=>{
+  currentUser=user;
+  try{
+    frame.contentWindow?.dispatchEvent(new CustomEvent('logbuch-firebase-auth',{detail:userDetail(user)}));
+  }catch(_e){}
+});
+</script>
 </body>
 </html>
