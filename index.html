@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logbuch-Wochenplaner v0.15.56</title>
+<title>Logbuch-Wochenplaner v0.15.60</title>
 <style>
 :root{--navy:#123B63;--navy2:#0B2A46;--teal:#0D7C86;--bg:#F3F6FA;--card:#fff;--text:#17324D;--muted:#6A7E91;--line:#D7E0E8;--green:#2F855A;--green2:#1F6B45;--greenbg:#E3F3E9;--red:#C23B3B;--redbg:#FBE7E7;--amber:#D99A17;--amberbg:#FFF3D6;--input:#FFF1A8;--blue:#145c9e;--purple:#6b3fa0}
 *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -276,7 +276,7 @@ window.dispatchEvent(new Event("logbuch-firebase-ready"));
 
 </head><body>
 <header>
-<div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.56</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div>
+<div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.60</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div>
 <div class="header-actions">
   <div id="cloudBox" class="cloud-box">
     <div id="cloudStatus" class="cloud-status"><b>☁ Online-Speicher</b><span>Nicht angemeldet</span></div>
@@ -717,31 +717,54 @@ function deckPlanSvg(){
     for(const w of tideWindows){
       const l=Math.max(0,Math.min(100,pos(new Date(w.start),v))), r=Math.max(0,Math.min(100,pos(new Date(w.end),v)));
       if(r<=l)continue;const x=left+l/100*timelineW, ww=(r-l)/100*timelineW;
-      const isDep=w.type==='dep', yy=isDep?ty+18:ty+28;
+      const isDep=w.type==='dep', yy=isDep?ty+8:ty+38;
       parts.push(`<rect x="${sx(x)}" y="${yy}" rx="4" width="${sx(ww)}" height="7" fill="${isDep?'#dbeafe':'#f1e5ff'}" stroke="${isDep?'#145c9e':'#6b3fa0'}" stroke-width="1.2"/>`);
     }
     for(const m of tideMarksForView(v)){
       const x=xFor(m.time,v);
       if(m.type==='hw'){
-        parts.push(`<line x1="${sx(x)}" y1="${ty+18}" x2="${sx(x)}" y2="${ty+25}" stroke="#145c9e" stroke-width="2.5"/>`);
-        parts.push(`<line x1="${sx(x)}" y1="${ty+28}" x2="${sx(x)}" y2="${ty+35}" stroke="#6b3fa0" stroke-width="2.5"/>`);
+        parts.push(`<line x1="${sx(x)}" y1="${ty+8}" x2="${sx(x)}" y2="${ty+15}" stroke="#145c9e" stroke-width="2.5"/>`);
+        parts.push(`<line x1="${sx(x)}" y1="${ty+38}" x2="${sx(x)}" y2="${ty+45}" stroke="#6b3fa0" stroke-width="2.5"/>`);
       }else{
-        parts.push(`<line x1="${sx(x)}" y1="${ty+16}" x2="${sx(x)}" y2="${ty+18}" stroke="#49677f" stroke-width="2.5"/>`);
-        parts.push(`<line x1="${sx(x)}" y1="${ty+35}" x2="${sx(x)}" y2="${ty+37}" stroke="#49677f" stroke-width="2.5"/>`);
+        parts.push(`<line x1="${sx(x)}" y1="${ty+6}" x2="${sx(x)}" y2="${ty+8}" stroke="#49677f" stroke-width="2.5"/>`);
+        parts.push(`<line x1="${sx(x)}" y1="${ty+45}" x2="${sx(x)}" y2="${ty+47}" stroke="#49677f" stroke-width="2.5"/>`);
       }
     }
     for(const b of blocks){
       const sp=pos(b.start,v), ep=pos(b.end,v);
-      if(sp>=0&&sp<=100){const x=left+sp/100*timelineW;parts.push(`<line x1="${sx(x)}" y1="${ty}" x2="${sx(x)}" y2="${ty+th}" stroke="#0a8f3c" stroke-width="3"/>`)}
-      if(ep>=0&&ep<=100){const x=left+ep/100*timelineW;parts.push(`<line x1="${sx(x)}" y1="${ty}" x2="${sx(x)}" y2="${ty+th}" stroke="#d32727" stroke-width="3"/>`)}
+      if(sp>=0&&sp<=100){
+        const x=left+sp/100*timelineW;
+        parts.push(`<line x1="${sx(x)}" y1="${ty}" x2="${sx(x)}" y2="${ty+th}" stroke="#0a8f3c" stroke-width="4"/>`);
+        parts.push(`<polygon points="${sx(x+1)},${ty+1} ${sx(x+15)},${ty+9} ${sx(x+1)},${ty+17}" fill="#0a8f3c"/>`);
+      }
+      if(ep>=0&&ep<=100){
+        const x=left+ep/100*timelineW;
+        parts.push(`<line x1="${sx(x)}" y1="${ty}" x2="${sx(x)}" y2="${ty+th}" stroke="#d32727" stroke-width="4"/>`);
+        parts.push(`<polygon points="${sx(x-1)},${ty+1} ${sx(x-15)},${ty+9} ${sx(x-1)},${ty+17}" fill="#d32727"/>`);
+      }
     }
     const dayTrips=planned.filter(t=>new Date(t.in)>new Date(v.start)&&new Date(t.out)<new Date(v.end));
+    const nextDay=new Date(date);nextDay.setDate(nextDay.getDate()+1);nextDay.setHours(0,0,0,0);
+    const dp=pos(nextDay,v);
+    if(dp>0&&dp<100){
+      const prevDay=new Date(date), dateX=left+dp/100*timelineW;
+      parts.push(`<rect x="${sx(dateX-4)}" y="${ty}" width="8" height="${th}" fill="#123b63" opacity=".10"/>`);
+      parts.push(`<line x1="${sx(dateX)}" y1="${ty-2}" x2="${sx(dateX)}" y2="${ty+th+2}" stroke="#123b63" stroke-width="3.5"/>`);
+      const leftText=`${wd(prevDay)} ${fmtDate(prevDay).slice(0,5)}`, rightText=`→ ${wd(nextDay)} ${fmtDate(nextDay).slice(0,5)}`;
+      const badgeText=`${leftText} | ${rightText}`, badgeW=Math.max(190,badgeText.length*6.2+24), badgeX=Math.max(left,Math.min(left+timelineW-badgeW,dateX-badgeW/2));
+      parts.push(`<rect x="${sx(badgeX)}" y="${ty-20}" rx="8" width="${sx(badgeW)}" height="18" fill="#123b63"/>`);
+      parts.push(`<text x="${sx(badgeX+badgeW/2)}" y="${ty-7}" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="10" font-weight="900" fill="#fff">${svgEsc(leftText)} | ${svgEsc(rightText)}</text>`);
+    }
     for(const t of dayTrips){
       const o=new Date(t.out), i=new Date(t.in), l=Math.max(0,Math.min(100,pos(o,v))), r=Math.max(0,Math.min(100,pos(i,v)));
       if(r<=l)continue;const x=left+l/100*timelineW, ww=Math.max(3,(r-l)/100*timelineW), yy=ty+19;
-      parts.push(`<rect x="${sx(x)}" y="${yy}" rx="6" width="${sx(ww)}" height="15" fill="#76b852" stroke="#4c9234"/>`);
-      if(ww>55)parts.push(`<text x="${sx(x+ww/2)}" y="${yy+11}" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="10" font-weight="800" fill="#fff">R${svgEsc(t.number)}</text>`);
-      const outTx=x+ww*0.28, inTx=x+ww*0.72, labelY=y+41;
+      const startKey=localKey(o), thisKey=localKey(date), nextKey=localKey(new Date(date.getTime()+86400000));
+      const fade=(startKey!==thisKey);
+      parts.push(`<rect x="${sx(x)}" y="${yy}" rx="6" width="${sx(ww)}" height="15" fill="#76b852" fill-opacity="${fade?'0.55':'1'}" stroke="#4c9234" stroke-opacity="${fade?'0.65':'1'}"/>`);
+      if(ww>55)parts.push(`<text x="${sx(x+ww/2)}" y="${yy+11}" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="10" font-weight="800" fill="#fff" fill-opacity="${fade?'0.78':'1'}">R${svgEsc(t.number)}</text>`);
+      const labelY=y+41;
+      const outTx=Math.max(left+48,Math.min(left+timelineW-48,x-34));
+      const inTx=Math.max(left+48,Math.min(left+timelineW-48,x+ww+34));
       if(o>=new Date(v.start)&&o<=new Date(v.end)){
         parts.push(`<text x="${sx(outTx)}" y="${labelY}" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="11" font-weight="900" fill="#145c9e">${svgEsc('Aus '+fmtTime(o))}</text>`);
       }
@@ -829,7 +852,7 @@ function downloadBackup(){
   const fileName=`Logbuch-Planer_${localKey(now)}_${device}_${numberText}.json`;
   const payload={
     app:'Logbuch-Wochenplaner',
-    version:'0.15.56',
+    version:'0.15.60',
     exportedAt:now.toISOString(),
     backupDevice:device,
     backupNumber,
