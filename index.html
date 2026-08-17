@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logbuch-Wochenplaner v0.15.55</title>
+<title>Logbuch-Wochenplaner v0.15.56</title>
 <style>
 :root{--navy:#123B63;--navy2:#0B2A46;--teal:#0D7C86;--bg:#F3F6FA;--card:#fff;--text:#17324D;--muted:#6A7E91;--line:#D7E0E8;--green:#2F855A;--green2:#1F6B45;--greenbg:#E3F3E9;--red:#C23B3B;--redbg:#FBE7E7;--amber:#D99A17;--amberbg:#FFF3D6;--input:#FFF1A8;--blue:#145c9e;--purple:#6b3fa0}
 *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -276,7 +276,7 @@ window.dispatchEvent(new Event("logbuch-firebase-ready"));
 
 </head><body>
 <header>
-<div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.55</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div>
+<div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.56</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div>
 <div class="header-actions">
   <div id="cloudBox" class="cloud-box">
     <div id="cloudStatus" class="cloud-status"><b>☁ Online-Speicher</b><span>Nicht angemeldet</span></div>
@@ -829,7 +829,7 @@ function downloadBackup(){
   const fileName=`Logbuch-Planer_${localKey(now)}_${device}_${numberText}.json`;
   const payload={
     app:'Logbuch-Wochenplaner',
-    version:'0.15.55',
+    version:'0.15.56',
     exportedAt:now.toISOString(),
     backupDevice:device,
     backupNumber,
@@ -1759,8 +1759,9 @@ function dayHtml(date){
     const o=new Date(t.out),i=new Date(t.in),l=pos(o,v),r=pos(i,v),c=clipped(l,r);
     if(c.width<=0)continue;
     const sel=t.id===selectedTripId?' selected':'',locked=t.locked?' locked':'';
-    const dayStart=new Date(key+'T00:00:00'),fadeEnd=new Date(key+'T10:00:00');
+    const dayStart=new Date(key+'T00:00:00'),dayEnd=new Date(dayStart.getTime()+86400000),fadeEnd=new Date(key+'T10:00:00');
     const carryover=o<dayStart;
+    const nextDayPreview=o>=dayEnd;
     let carryStyle='',carryClass='';
     if(carryover){
       const visibleStart=Math.max(o.getTime(),v.start),visibleEnd=Math.min(i.getTime(),v.end),split=Math.min(fadeEnd.getTime(),visibleEnd);
@@ -1770,6 +1771,10 @@ function dayHtml(date){
         carryStyle=`background:linear-gradient(to right,${pale} 0%,${pale} ${pct}%,${solid} ${pct}%,${solid} 100%);`;
         if(pct>=99.9)carryClass=' carryover-faded';
       }
+    }else if(nextDayPreview){
+      const pale=t.locked?'rgba(194,59,59,.38)':'rgba(118,184,82,.38)';
+      carryStyle=`background:${pale};`;
+      carryClass=' carryover-faded';
     }
     inner+=`<div class="trip${locked}${sel}${carryClass}" data-id="${t.id}" data-mode="move" style="left:${c.left}%;width:${c.width}%;${carryStyle}" title="${t.locked?'Gespeichert/gefahren – gesperrt':'Geplant – verschiebbar'}">${t.locked?'🔒 ':''}R${t.number} · ${((i-o)/3600000).toFixed(1)} h</div>`;
     if(!t.locked&&o>=new Date(v.start)&&o<=new Date(v.end)){
