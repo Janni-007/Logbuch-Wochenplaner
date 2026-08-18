@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logbuch-Wochenplaner v0.15.60</title>
+<title>Logbuch-Wochenplaner v0.15.61</title>
 <style>
 :root{--navy:#123B63;--navy2:#0B2A46;--teal:#0D7C86;--bg:#F3F6FA;--card:#fff;--text:#17324D;--muted:#6A7E91;--line:#D7E0E8;--green:#2F855A;--green2:#1F6B45;--greenbg:#E3F3E9;--red:#C23B3B;--redbg:#FBE7E7;--amber:#D99A17;--amberbg:#FFF3D6;--input:#FFF1A8;--blue:#145c9e;--purple:#6b3fa0}
 *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -276,7 +276,7 @@ window.dispatchEvent(new Event("logbuch-firebase-ready"));
 
 </head><body>
 <header>
-<div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.60</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div>
+<div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.61</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div>
 <div class="header-actions">
   <div id="cloudBox" class="cloud-box">
     <div id="cloudStatus" class="cloud-status"><b>☁ Online-Speicher</b><span>Nicht angemeldet</span></div>
@@ -761,7 +761,9 @@ function deckPlanSvg(){
       const startKey=localKey(o), thisKey=localKey(date), nextKey=localKey(new Date(date.getTime()+86400000));
       const fade=(startKey!==thisKey);
       parts.push(`<rect x="${sx(x)}" y="${yy}" rx="6" width="${sx(ww)}" height="15" fill="#76b852" fill-opacity="${fade?'0.55':'1'}" stroke="#4c9234" stroke-opacity="${fade?'0.65':'1'}"/>`);
-      if(ww>55)parts.push(`<text x="${sx(x+ww/2)}" y="${yy+11}" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="10" font-weight="800" fill="#fff" fill-opacity="${fade?'0.78':'1'}">R${svgEsc(t.number)}</text>`);
+      const durHours=((i-o)/3600000).toFixed(1).replace('.',',');
+      if(ww>82)parts.push(`<text x="${sx(x+ww/2)}" y="${yy+11}" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="10" font-weight="800" fill="#fff" fill-opacity="${fade?'0.78':'1'}">R${svgEsc(t.number)} · ${svgEsc(durHours)} h</text>`);
+      else if(ww>42)parts.push(`<text x="${sx(x+ww/2)}" y="${yy+11}" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="10" font-weight="800" fill="#fff" fill-opacity="${fade?'0.78':'1'}">R${svgEsc(t.number)}</text>`);
       const labelY=y+41;
       const outTx=Math.max(left+48,Math.min(left+timelineW-48,x-34));
       const inTx=Math.max(left+48,Math.min(left+timelineW-48,x+ww+34));
@@ -852,7 +854,7 @@ function downloadBackup(){
   const fileName=`Logbuch-Planer_${localKey(now)}_${device}_${numberText}.json`;
   const payload={
     app:'Logbuch-Wochenplaner',
-    version:'0.15.60',
+    version:'0.15.61',
     exportedAt:now.toISOString(),
     backupDevice:device,
     backupNumber,
@@ -1149,6 +1151,7 @@ function saveTripEditor(){
     alert('Diese Zeiten überschneiden sich mit einer bereits vorhandenen Reise.');
     return;
   }
+  if(!t.locked)pushUndoState('Zeitänderung');
   t.out=out.toISOString();
   t.in=inn.toISOString();
   lastTripMove=null;
@@ -1193,7 +1196,7 @@ function renumber(){
     });
 }
 function recommendedTrip(key){const r=TIDES[key],s=settings();if(!r)return null;const dayStart=new Date(key+'T00:00:00'),dayEnd=new Date(dayStart.getTime()+86400000);const wins=pairWindows(r,s.depAfterNW,s.depAfterHW,'dep').filter(w=>new Date(w.start)>=dayStart&&new Date(w.start)<dayEnd).sort((a,b)=>new Date(a.start)-new Date(b.start));const w=wins[1]||wins[0];if(!w)return null;const hours=(r.trip_type==='Kurzreise'?s.shortHours:s.longHours);const start=new Date(w.start),end=new Date(w.end),target=new Date(key+'T18:00:00');let out=new Date(Math.min(Math.max(target.getTime(),start.getTime()),end.getTime()));const inn=new Date(out.getTime()+hours*3600000);return{out,inn}}
-function addTrip(key){const rec=recommendedTrip(key);if(!rec){show('Für diesen Tag wurde kein gültiges Auslauffenster gefunden.');return}const overlaps=trips.some(t=>rec.out<new Date(t.in)&&rec.inn>new Date(t.out));if(overlaps){show('Die vorgeschlagene Reise überschneidet sich mit einer vorhandenen Reise.');return}trips.push({id:crypto.randomUUID(),out:rec.out.toISOString(),in:rec.inn.toISOString(),locked:false});selectedTripId=trips.at(-1).id;renumber();save();render()}
+function addTrip(key){const rec=recommendedTrip(key);if(!rec){show('Für diesen Tag wurde kein gültiges Auslauffenster gefunden.');return}const overlaps=trips.some(t=>rec.out<new Date(t.in)&&rec.inn>new Date(t.out));if(overlaps){show('Die vorgeschlagene Reise überschneidet sich mit einer vorhandenen Reise.');return}pushUndoState('Reise hinzufügen');trips.push({id:crypto.randomUUID(),out:rec.out.toISOString(),in:rec.inn.toISOString(),locked:false});selectedTripId=trips.at(-1).id;renumber();save();render()}
 function deleteSelected(){if(!selectedTripId)return;trips=trips.filter(t=>t.id!==selectedTripId);selectedTripId=null;renumber();save();render()}
 function saveSelectedTrip(dayKey){
   const t=tripById(selectedTripId);
@@ -1818,10 +1821,10 @@ function dayHtml(date){
   const editDisabled=touchUi?(!selectedHere?' disabled':''):(!selectedHere||!selected.locked?' disabled':'');
   const mobileEditing=touchUi&&selectedHere&&mobileEditState?.id===selected.id;
   const editLabel=mobileEditing?'✓ Bearbeiten speichern':'✎ Bearbeiten';
-  const undoHere=touchUi&&lastTripMove?.day===key?`<button class="secondary mobile-inline-undo" data-undo-day="${key}">↶ Balken zurück</button>`:'';
+  const undoHere=`<button class="secondary${undoStack.length?'':' disabled'}" data-undo-plan="${key}" title="Letzte Planungsänderung rückgängig machen">↶ Rückgängig</button>`;
   return `<div class="day-card${isToday?' today-card':''}"><div class="day-head"><div class="day-meta"><div class="day-meta-left"><div class="day-title">${wd(date)} · ${fmtDate(date)}${isToday?'<span class="today-tag">Heute</span>':''}</div><div class="day-tide">${rec?rec.summary:'Keine Gezeitendaten'}</div>${waterInfoHtml(key,isToday)}</div><div class="day-meta-right">${windInfoHtml(key)}</div></div><div class="day-actions">${tidePhaseBadge(key)}<button class="secondary${saveDisabled}" data-save-day="${key}">🔒 Speichern</button><button class="secondary${editDisabled}${mobileEditing?' active':''}" data-edit-day="${key}">${editLabel}</button>${undoHere}<button class="primary" data-add="${key}">+ Reise planen</button></div></div><div class="timeline-wrap"><div class="date-row">${dayTransitionHtml(v)}</div><div class="timeline" data-day="${key}" data-start="${v.start}" data-end="${v.end}">${inner}</div><div class="hour-row">${hours}</div></div><div class="day-footer"><span class="trip-info">${ownedTrips.length} Reise${ownedTrips.length===1?'':'n'} an diesem Tag · ${savedHere} gespeichert/gefahren</span></div>${tripList}</div>`;
 }
-function deleteTripById(id){const t=tripById(id);if(t?.locked&&!confirm(`R${t.number} ist gespeichert/gefahren. Wirklich löschen?`))return;trips=trips.filter(t=>t.id!==id);if(selectedTripId===id)selectedTripId=null;renumber();save();render()}
+function deleteTripById(id){const t=tripById(id);if(t?.locked&&!confirm(`R${t.number} ist gespeichert/gefahren. Wirklich löschen?`))return;if(t&&!t.locked)pushUndoState('Reise löschen');trips=trips.filter(t=>t.id!==id);if(selectedTripId===id)selectedTripId=null;renumber();save();render()}
 function render(){
   renumber();
   const ws=new Date($('weekStart').value+'T00:00:00');
@@ -1869,7 +1872,7 @@ function render(){
   document.querySelectorAll('[data-edit-day]').forEach(b=>b.onclick=()=>editSelectedTrip(b.dataset.editDay));
   document.querySelectorAll('[data-select-id]').forEach(r=>r.onclick=e=>{if(e.target.closest('button'))return;selectedTripId=r.dataset.selectId;render()});
   document.querySelectorAll('[data-manual-edit-id]').forEach(b=>b.onclick=e=>{e.stopPropagation();openTripEditor(b.dataset.manualEditId)});
-  document.querySelectorAll('[data-undo-day]').forEach(b=>b.onclick=e=>{e.stopPropagation();undoLastTripMove()});
+  document.querySelectorAll('[data-undo-plan]').forEach(b=>b.onclick=e=>{e.stopPropagation();undoPlanningChange()});
   document.querySelectorAll('[data-delete-id]').forEach(b=>b.onclick=e=>{e.stopPropagation();deleteTripById(b.dataset.deleteId)});
   updateUndoTripButton();
   renderArchive();
@@ -1878,6 +1881,22 @@ function render(){
 function tripById(id){return trips.find(t=>t.id===id)}
 let lastTripMove=null;
 let mobileEditState=null;
+const undoStack=[];
+const MAX_UNDO_STEPS=50;
+function cloneTrips(list=trips){return list.map(t=>({...t}))}
+function pushUndoState(label='Planungsänderung',snapshot=null){
+  undoStack.push({label,trips:snapshot?cloneTrips(snapshot):cloneTrips(),selectedTripId});
+  if(undoStack.length>MAX_UNDO_STEPS)undoStack.shift();
+}
+function undoPlanningChange(){
+  const state=undoStack.pop();
+  if(!state){show('Keine weitere Planungsänderung zum Rückgängigmachen.');return}
+  trips=cloneTrips(state.trips);
+  selectedTripId=state.selectedTripId&&trips.some(t=>t.id===state.selectedTripId)?state.selectedTripId:null;
+  mobileEditState=null;lastTripMove=null;
+  renumber();save();render();
+  show(`${state.label} wurde rückgängig gemacht.`);
+}
 function isTouchUi(){return window.matchMedia('(pointer: coarse)').matches}
 function updateUndoTripButton(){}
 function undoLastTripMove(){
@@ -1893,7 +1912,7 @@ function undoLastTripMove(){
   render();
   show('Letzte Verschiebung des Reisebalkens wurde rückgängig gemacht.');
 }
-function pointerDown(e){const target=e.target.closest('[data-mode]');if(target){const t=tripById(target.dataset.id);if(!t)return;e.preventDefault();selectedTripId=t.id;const touchMode=e.pointerType==='touch'||window.matchMedia('(pointer: coarse)').matches;if(touchMode&&mobileEditState?.id!==t.id){render();show('Am Handy zuerst „Bearbeiten“ aktivieren.');return}if(touchMode&&target.dataset.mode!=='move'){render();show('Start und Ende am Handy bitte über „Zeiten“ ändern.');return}if(t.locked){render();return}const bar=target.closest('.timeline'),rect=bar.getBoundingClientRect(),v={start:+bar.dataset.start,end:+bar.dataset.end};const pointerTime=v.start+((e.clientX-rect.left)/rect.width)*(v.end-v.start);const wrap=bar.closest('.timeline-wrap');drag={kind:'trip',mode:target.dataset.mode,id:t.id,day:bar.dataset.day,startX:e.clientX,width:rect.width,view:v,initialOut:new Date(t.out).getTime(),initialIn:new Date(t.in).getTime(),grabOffset:pointerTime-new Date(t.out).getTime(),scrollLeft:wrap?.scrollLeft||0};window.addEventListener('pointermove',pointerMove);window.addEventListener('pointerup',pointerUp,{once:true});return}const bar=e.target.closest('.timeline');if(bar){const touchMode=e.pointerType==='touch'||window.matchMedia('(pointer: coarse)').matches;if(touchMode)return;e.preventDefault();const rect=bar.getBoundingClientRect();bar.classList.add('panning');drag={kind:'pan',day:bar.dataset.day,startX:e.clientX,width:rect.width,start:+bar.dataset.start,end:+bar.dataset.end,bar};window.addEventListener('pointermove',pointerMove);window.addEventListener('pointerup',pointerUp,{once:true})}}
+function pointerDown(e){const target=e.target.closest('[data-mode]');if(target){const t=tripById(target.dataset.id);if(!t)return;e.preventDefault();selectedTripId=t.id;const touchMode=e.pointerType==='touch'||window.matchMedia('(pointer: coarse)').matches;if(touchMode&&mobileEditState?.id!==t.id){render();show('Am Handy zuerst „Bearbeiten“ aktivieren.');return}if(touchMode&&target.dataset.mode!=='move'){render();show('Start und Ende am Handy bitte über „Zeiten“ ändern.');return}if(t.locked){render();return}const bar=target.closest('.timeline'),rect=bar.getBoundingClientRect(),v={start:+bar.dataset.start,end:+bar.dataset.end};const pointerTime=v.start+((e.clientX-rect.left)/rect.width)*(v.end-v.start);const wrap=bar.closest('.timeline-wrap');drag={kind:'trip',mode:target.dataset.mode,id:t.id,day:bar.dataset.day,startX:e.clientX,width:rect.width,view:v,initialOut:new Date(t.out).getTime(),initialIn:new Date(t.in).getTime(),preTrips:cloneTrips(),preSelectedTripId:selectedTripId,grabOffset:pointerTime-new Date(t.out).getTime(),scrollLeft:wrap?.scrollLeft||0};window.addEventListener('pointermove',pointerMove);window.addEventListener('pointerup',pointerUp,{once:true});return}const bar=e.target.closest('.timeline');if(bar){const touchMode=e.pointerType==='touch'||window.matchMedia('(pointer: coarse)').matches;if(touchMode)return;e.preventDefault();const rect=bar.getBoundingClientRect();bar.classList.add('panning');drag={kind:'pan',day:bar.dataset.day,startX:e.clientX,width:rect.width,start:+bar.dataset.start,end:+bar.dataset.end,bar};window.addEventListener('pointermove',pointerMove);window.addEventListener('pointerup',pointerUp,{once:true})}}
 function pointerMove(e){if(!drag)return;e.preventDefault();if(drag.kind==='pan'){const delta=snap(((e.clientX-drag.startX)/drag.width)*(drag.end-drag.start));dayViews[drag.day]={start:drag.start-delta,end:drag.end-delta};render();return}const t=tripById(drag.id);if(!t||t.locked)return;const pointer=drag.view.start+Math.max(0,Math.min(1,(e.clientX-drag.barLeft||0)/drag.width))*(drag.view.end-drag.view.start);const delta=snap(((e.clientX-drag.startX)/drag.width)*(drag.view.end-drag.view.start));let o=drag.initialOut,i=drag.initialIn;if(drag.mode==='move'){o+=delta;i+=delta}else if(drag.mode==='start'){o=Math.min(drag.initialOut+delta,i-STEP)}else{i=Math.max(drag.initialIn+delta,o+STEP)}const overlap=trips.some(x=>x.id!==t.id&&new Date(o)<new Date(x.in)&&new Date(i)>new Date(x.out));if(!overlap){t.out=new Date(o).toISOString();t.in=new Date(i).toISOString();renumber();render();const activeTimeline=document.querySelector(`.timeline[data-day="${drag.day}"]`);const activeWrap=activeTimeline?.closest('.timeline-wrap');if(activeWrap)activeWrap.scrollLeft=drag.scrollLeft}}
 function pointerUp(){
   if(drag?.bar)drag.bar.classList.remove('panning');
@@ -1901,6 +1920,8 @@ function pointerUp(){
   if(finished?.kind==='trip'){
     const t=tripById(finished.id);
     if(t&&!t.locked&&(t.out!==new Date(finished.initialOut).toISOString()||t.in!==new Date(finished.initialIn).toISOString())){
+      undoStack.push({label:'Balkenänderung',trips:cloneTrips(finished.preTrips||[]),selectedTripId:finished.preSelectedTripId||finished.id});
+      if(undoStack.length>MAX_UNDO_STEPS)undoStack.shift();
       lastTripMove={id:t.id,day:finished.day,out:new Date(finished.initialOut).toISOString(),in:new Date(finished.initialIn).toISOString()};
     }
   }
@@ -1946,7 +1967,7 @@ window.addEventListener('online',()=>{
 window.addEventListener('offline',()=>{
   if(cloudUser)setCloudStatus('saving','☁ Offline','Änderungen werden lokal vorgemerkt');
 });
-document.addEventListener('click',e=>{const b=e.target.closest('[data-refresh-web]');if(b){e.preventDefault();e.stopPropagation();refreshWebData(true);}});$('tripEditorForm').onsubmit=e=>{e.preventDefault();saveTripEditor()};$('tripEditorCancel').onclick=closeTripEditor;$('tripEditorClose').onclick=closeTripEditor;$('tripEditor').addEventListener('cancel',e=>{e.preventDefault();closeTripEditor()});const exportDeckBtn=$('exportDeckHtml');if(exportDeckBtn)exportDeckBtn.onclick=openDeckExportDialog;const deckCloseBtn=$('deckExportClose');if(deckCloseBtn)deckCloseBtn.onclick=closeDeckExportDialog;const shareDeckBtn=$('shareDeckPlan');if(shareDeckBtn)shareDeckBtn.onclick=shareDeckPlanImage;const copyDeckBtn=$('copyDeckPlan');if(copyDeckBtn)copyDeckBtn.onclick=copyDeckPlanImage;const saveDeckImageBtn=$('saveDeckPlanImage');if(saveDeckImageBtn)saveDeckImageBtn.onclick=saveDeckPlanImage;const deckDlg=$('deckExportDialog');if(deckDlg)deckDlg.addEventListener('cancel',e=>{e.preventDefault();closeDeckExportDialog()});$('downloadBackup').onclick=downloadBackup;$('importBackup').onclick=()=>$('backupFile').click();$('backupFile').onchange=e=>importBackupFile(e.target.files[0]);$('importExcel').onclick=()=>$('excelFile').click();$('excelFile').onchange=e=>importExcelTrips(e.target.files[0]);$('prevWeek').onclick=()=>shiftWeek(-7);$('nextWeek').onclick=()=>shiftWeek(7);$('weekStart').onchange=()=>{$('weekStart').value=localKey(sundayOf(new Date($('weekStart').value+'T12:00:00')));dayViews={};render()};$('clearWeek').onclick=()=>{if(!confirm('Alle noch nicht gespeicherten Planungsreisen dieser Woche löschen? Gespeicherte/gefahrene Reisen bleiben erhalten.'))return;const ws=new Date($('weekStart').value+'T00:00:00'),we=new Date(ws.getTime()+7*86400000);trips=trips.filter(t=>t.locked||!(new Date(t.out)<we&&new Date(t.in)>ws));selectedTripId=null;lastTripMove=null;save();render()};$('applySettings').onclick=()=>{save();render();const d=$('settingsDetails');if(d)d.open=false;};$('resetSettings').onclick=()=>{const s={depAfterNW:3,depAfterHW:0,arrAfterNW:2.5,arrAfterHW:1,longHours:11,shortHours:3,goalDays:90,reserveDays:5};Object.entries(s).forEach(([k,v])=>$(k).value=v);save();render()};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-refresh-web]');if(b){e.preventDefault();e.stopPropagation();refreshWebData(true);}});$('tripEditorForm').onsubmit=e=>{e.preventDefault();saveTripEditor()};$('tripEditorCancel').onclick=closeTripEditor;$('tripEditorClose').onclick=closeTripEditor;$('tripEditor').addEventListener('cancel',e=>{e.preventDefault();closeTripEditor()});const exportDeckBtn=$('exportDeckHtml');if(exportDeckBtn)exportDeckBtn.onclick=openDeckExportDialog;const deckCloseBtn=$('deckExportClose');if(deckCloseBtn)deckCloseBtn.onclick=closeDeckExportDialog;const shareDeckBtn=$('shareDeckPlan');if(shareDeckBtn)shareDeckBtn.onclick=shareDeckPlanImage;const copyDeckBtn=$('copyDeckPlan');if(copyDeckBtn)copyDeckBtn.onclick=copyDeckPlanImage;const saveDeckImageBtn=$('saveDeckPlanImage');if(saveDeckImageBtn)saveDeckImageBtn.onclick=saveDeckPlanImage;const deckDlg=$('deckExportDialog');if(deckDlg)deckDlg.addEventListener('cancel',e=>{e.preventDefault();closeDeckExportDialog()});$('downloadBackup').onclick=downloadBackup;$('importBackup').onclick=()=>$('backupFile').click();$('backupFile').onchange=e=>importBackupFile(e.target.files[0]);$('importExcel').onclick=()=>$('excelFile').click();$('excelFile').onchange=e=>importExcelTrips(e.target.files[0]);$('prevWeek').onclick=()=>shiftWeek(-7);$('nextWeek').onclick=()=>shiftWeek(7);$('weekStart').onchange=()=>{$('weekStart').value=localKey(sundayOf(new Date($('weekStart').value+'T12:00:00')));dayViews={};render()};$('clearWeek').onclick=()=>{if(!confirm('Alle noch nicht gespeicherten Planungsreisen dieser Woche löschen? Gespeicherte/gefahrene Reisen bleiben erhalten.'))return;const ws=new Date($('weekStart').value+'T00:00:00'),we=new Date(ws.getTime()+7*86400000);if(trips.some(t=>!t.locked&&new Date(t.out)<we&&new Date(t.in)>ws))pushUndoState('Woche leeren');trips=trips.filter(t=>t.locked||!(new Date(t.out)<we&&new Date(t.in)>ws));selectedTripId=null;lastTripMove=null;save();render()};$('applySettings').onclick=()=>{save();render();const d=$('settingsDetails');if(d)d.open=false;};$('resetSettings').onclick=()=>{const s={depAfterNW:3,depAfterHW:0,arrAfterNW:2.5,arrAfterHW:1,longHours:11,shortHours:3,goalDays:90,reserveDays:5};Object.entries(s).forEach(([k,v])=>$(k).value=v);save();render()};
 
 $('showPlanning').onclick=()=>{
   $('planningView').classList.remove('hidden');$('archiveView').classList.add('hidden');
