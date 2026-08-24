@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logbuch-Wochenplaner v0.15.61</title>
+<title>Logbuch-Wochenplaner v0.15.82</title>
 <style>
 :root{--navy:#123B63;--navy2:#0B2A46;--teal:#0D7C86;--bg:#F3F6FA;--card:#fff;--text:#17324D;--muted:#6A7E91;--line:#D7E0E8;--green:#2F855A;--green2:#1F6B45;--greenbg:#E3F3E9;--red:#C23B3B;--redbg:#FBE7E7;--amber:#D99A17;--amberbg:#FFF3D6;--input:#FFF1A8;--blue:#145c9e;--purple:#6b3fa0}
 *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -276,7 +276,7 @@ window.dispatchEvent(new Event("logbuch-firebase-ready"));
 
 </head><body>
 <header>
-<div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.61</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div>
+<div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.82</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div>
 <div class="header-actions">
   <div id="cloudBox" class="cloud-box">
     <div id="cloudStatus" class="cloud-status"><b>☁ Online-Speicher</b><span>Nicht angemeldet</span></div>
@@ -316,7 +316,7 @@ window.dispatchEvent(new Event("logbuch-firebase-ready"));
   <div class="kpi-grid4">
     <div class="kpi-grid4-item"><span class="kpi-main" id="savedYearTripCount">0</span><span class="kpi-main-label">Reisen</span></div>
     <div class="kpi-grid4-item"><span class="kpi-main" id="savedBlockCount">0</span><span class="kpi-main-label">BLE-Tage</span></div>
-    <div class="kpi-grid4-item"><span class="kpi-main" id="savedHours">0,0</span><span class="kpi-main-label">Stunden</span></div>
+    <div class="kpi-grid4-item"><span class="kpi-main" id="savedHours">0,0</span><span class="kpi-main-label">Stunden gespeichert</span><span class="kpi-plan"><b id="totalHoursPlanned">0,0</b> h inkl. geplant</span></div>
     <div class="kpi-grid4-item"><span class="kpi-main compare-value" id="savedCalendarDays">0</span><span class="kpi-main-label">Kalendertage · Vergleich</span></div>
   </div>
   <span class="kpi-extra">Gesamt · nur gespeichert</span>
@@ -324,7 +324,7 @@ window.dispatchEvent(new Event("logbuch-firebase-ready"));
 <div class="kpi"><span class="kpi-main" id="savedGoalMissing">95</span><span class="kpi-main-label">fehlen bis Ziel inkl. Reserve</span><span class="kpi-plan"><b id="plannedGoalMissing">95</b> fehlen nach aktueller Planung</span></div>
 </div></section>
 <details class="card" id="settingsDetails"><summary style="font-weight:900;color:var(--teal);cursor:pointer">⚙ Einstellungen anzeigen</summary><h2 class="section-title" style="margin-top:10px">Einstellungen</h2><div class="settings"><div class="setting-row"><label>Auslaufen ab NW</label><input id="depAfterNW" type="number" step="0.5" value="3"></div><div class="setting-row"><label>Langreise</label><input id="longHours" type="number" step="0.5" value="11"></div><div class="setting-row"><label>Auslaufen bis HW</label><input id="depAfterHW" type="number" step="0.5" value="0"></div><div class="setting-row"><label>Kurzreise</label><input id="shortHours" type="number" step="0.5" value="3"></div><div class="setting-row"><label>Einlaufen ab NW</label><input id="arrAfterNW" type="number" step="0.5" value="2.5"></div><div class="setting-row"><label>Ziel</label><input id="goalDays" type="number" step="1" value="90"></div><div class="setting-row"><label>Einlaufen bis HW</label><input id="arrAfterHW" type="number" step="0.5" value="1"></div><div class="setting-row"><label>Reserve</label><input id="reserveDays" type="number" step="1" value="5"></div><div class="setting-row"><label>Backup-Gerät</label><input id="backupDeviceName" type="text" maxlength="14" placeholder="z. B. Handy oder PC"></div></div><div class="settings-actions"><button class="primary" id="applySettings">Einstellungen übernehmen</button><button class="secondary" id="resetSettings">Standard V5.5.18a</button></div><p class="small">Alle Zeitangaben in Stunden. Beispiel: 2,5 = 2 Stunden 30 Minuten.</p></details>
-<section class="card"><h2 class="section-title">Zeitfenster für die ganze Woche</h2><div class="week-nav-inline"><button class="secondary" id="prevWeek">← Vorherige Woche</button><button class="navy" id="todayButton">Heute</button><button class="secondary" id="nextWeek">Nächste Woche →</button></div><div class="legend">Grün = geplante Reise · Rot = gespeichert/gefahren und gesperrt · R1, R2 … = fortlaufende Reisenummer · grüner Pfeil = Blockbeginn · roter Pfeil = Blockende · am PC: freie Fläche ziehen = Zeitachse verschieben</div><div class="small" style="margin:0 0 8px">Reise anklicken → am PC wie bisher bearbeiten. Am Handy schützt <b>Bearbeiten</b> nur das direkte Verschieben des Reisebalkens. <b>Zeiten</b> kann wie bisher jederzeit direkt geöffnet werden. Nochmal <b>Bearbeiten</b> speichert die Balkenänderung und beendet den Bearbeitungsmodus.</div><div id="notice" class="notice"></div><div id="weekGrid" class="week-grid"></div><div class="back-to-top-wrap"><button class="back-to-top" id="backToTop">↑ Nach oben</button></div></section>
+<section class="card"><h2 class="section-title">Zeitfenster für die ganze Woche</h2><div class="week-nav-inline"><button class="secondary" id="prevWeek">← Vorherige Woche</button><button class="navy" id="todayButton">Heute</button><button class="secondary" id="nextWeek">Nächste Woche →</button></div><div class="legend">Grün = geplante Reise · Rot = gespeichert/gefahren und gesperrt · R1, R2 … = fortlaufende Reisenummer · BLE-Tag 1, 2 … = Nummer innerhalb der angezeigten Sonntag–Samstag-Woche · grüner Pfeil = Blockbeginn · roter Pfeil = Blockende · am PC: freie Fläche ziehen = Zeitachse verschieben</div><div class="small" style="margin:0 0 8px">Reise anklicken → am PC wie bisher bearbeiten. Am Handy schützt <b>Bearbeiten</b> nur das direkte Verschieben des Reisebalkens. <b>Zeiten</b> kann wie bisher jederzeit direkt geöffnet werden. Nochmal <b>Bearbeiten</b> speichert die Balkenänderung und beendet den Bearbeitungsmodus.</div><div id="notice" class="notice"></div><div id="weekGrid" class="week-grid"></div><div class="back-to-top-wrap"><button class="back-to-top" id="backToTop">↑ Nach oben</button></div></section>
 </div>
 <div id="archiveView" class="hidden">
   <section class="card">
@@ -854,7 +854,7 @@ function downloadBackup(){
   const fileName=`Logbuch-Planer_${localKey(now)}_${device}_${numberText}.json`;
   const payload={
     app:'Logbuch-Wochenplaner',
-    version:'0.15.61',
+    version:'0.15.81',
     exportedAt:now.toISOString(),
     backupDevice:device,
     backupNumber,
@@ -1272,10 +1272,10 @@ function fishDayInfoForTrip(trip,weekStartDate){
   const ws=new Date(weekStartDate);ws.setHours(0,0,0,0);
   const we=new Date(ws.getTime()+7*86400000);
   const allBlocks=buildBlocks(trips);
-  const weekTripSet=trips.filter(t=>new Date(t.in)>ws&&new Date(t.out)<we);
-  const weekBlocks=allBlocks.filter(b=>weekTripSet.some(t=>new Date(t.in)>b.start&&new Date(t.out)<b.end));
+  // Nur Blockstarts innerhalb der angezeigten Sonntag–Samstag-Woche werden nummeriert.
+  // Die eigentliche BLE-24-h-Blocklogik bleibt unverändert und läuft wochenübergreifend weiter.
+  const weekBlocks=allBlocks.filter(b=>b.start>=ws&&b.start<we);
   const out=new Date(trip.out),inn=new Date(trip.in);
-
   const touched=weekBlocks
     .map((b,i)=>({b,n:i+1}))
     .filter(x=>inn>x.b.start&&out<x.b.end);
@@ -1284,21 +1284,17 @@ function fishDayInfoForTrip(trip,weekStartDate){
     .filter(x=>x.b.start>=out&&x.b.start<inn)
     .map(x=>x.n);
 
-  if(newlyCreated.length===1){
-    return {label:`Fischtag ${newlyCreated[0]}`,isNew:true};
-  }
-  if(newlyCreated.length>1){
-    return {label:`Fischtage ${newlyCreated.join(' + ')}`,isNew:true};
-  }
+  if(newlyCreated.length===1)return {label:`BLE-Tag ${newlyCreated[0]}`,isNew:true};
+  if(newlyCreated.length>1)return {label:`BLE-Tage ${newlyCreated.join(' + ')}`,isNew:true};
 
   const current=touched.map(x=>x.n);
-  if(current.length===1){
-    return {label:`kein neuer Fischtag · Block ${current[0]}`,isNew:false};
-  }
-  if(current.length>1){
-    return {label:`kein neuer Start · Blöcke ${current.join(' + ')}`,isNew:false};
-  }
-  return {label:'kein Fischtag',isNew:false};
+  if(current.length===1)return {label:`kein neuer BLE-Tag · Tag ${current[0]} läuft`,isNew:false};
+  if(current.length>1)return {label:`kein neuer Start · BLE-Tage ${current.join(' + ')}`,isNew:false};
+
+  // Reise kann in einem Block liegen, der bereits in der Vorwoche begonnen hat.
+  const carry=allBlocks.find(b=>b.start<ws&&b.end>ws&&inn>b.start&&out<b.end);
+  if(carry)return {label:'kein neuer BLE-Tag · Block aus Vorwoche',isNew:false};
+  return {label:'kein BLE-Tag',isNew:false};
 }
 
 const BSH_MOON_PHASES_2026={
@@ -1526,9 +1522,11 @@ function renderArchive(){syncArchiveFilters();$('archiveList').innerHTML=archive
 const LANGEOOG_STATION_UUID='a0c1dcb6-7812-48e6-8c01-f7edad7a2caf';
 const LANGEOOG_CURRENT_URL=`https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/${LANGEOOG_STATION_UUID}/W/currentmeasurement.json`;
 const LANGEOOG_RECENT_URL=`https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/${LANGEOOG_STATION_UUID}/W/measurements.json?start=P1D`;
-const NORDERNEY_FORECAST_URL='https://wasserstand.bsh.de/norderney_riffgat';
-const NORDERNEY_MHW_CM=626, NORDERNEY_MNW_CM=383;
-let liveWater={langeoog:null,langeoogError:false,loadedAt:null,norderney:{},norderneyError:false};
+const BSH_WATER_API_BASE='https://gdi.bsh.de/ldproxy/rest/services/WaterLevelForecast/collections/waterlevelforecastdata/items';
+const LANGEOOG_BSH_STATION='langeoog_hafeneinfahrt';
+const LANGEOOG_FORECAST_URL='https://wasserstand.bsh.de/langeoog_hafeneinfahrt';
+const LANGEOOG_BSH_API_URL='https://bsh-langeoog-proxy.jg-info.workers.dev/';
+let liveWater={langeoog:null,langeoogError:false,loadedAt:null,bshForecast:{},bshForecastError:false,bshForecastErrorDetail:'',bshForecastAt:null,bshMeanHW:null,bshMeanNW:null};
 function forecastLight(delta){
   if(!Number.isFinite(delta))return '⚪';
   if(delta>=0)return '🟢';
@@ -1539,76 +1537,157 @@ function formatMetres(cm){return (cm/100).toLocaleString('de-DE',{minimumFractio
 function formatDelta(cm){if(!Number.isFinite(cm))return '';return `${cm>0?'+':''}${Math.round(cm)} cm`}
 function trendSymbol(trend){return trend==='rising'?'↑':trend==='falling'?'↓':'→'}
 function trendText(trend){return trend==='rising'?'steigend':trend==='falling'?'fallend':'gleichbleibend'}
-function parseGermanDate(dmy,time){
-  const m=String(dmy).match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/); if(!m)return null;
-  const [hh,mm]=String(time||'00:00').split(':').map(Number);
-  return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),hh||0,mm||0,0,0);
+function parseBshNumber(v){
+  if(v===null||v===undefined||v==='')return null;
+  if(typeof v==='number')return Number.isFinite(v)?v:null;
+  const n=Number(String(v).replace(',','.').replace(/[^0-9+\-.]/g,''));
+  return Number.isFinite(n)?n:null;
 }
-function addNorderneyPeak(date,time,type,deltaCm){
-  const dt=parseGermanDate(date,time); if(!dt)return;
-  const key=localKey(dt),base=type==='HW'?NORDERNEY_MHW_CM:NORDERNEY_MNW_CM;
-  if(!liveWater.norderney[key])liveWater.norderney[key]=[];
-  const exists=liveWater.norderney[key].some(x=>x.type===type&&x.time===time);
-  if(!exists)liveWater.norderney[key].push({type,time,deltaCm,levelCm:base+deltaCm,approx:false});
+function parseBshDeviationCm(v){
+  if(v===null||v===undefined||v==='')return null;
+  if(typeof v==='number')return Math.abs(v)<=5?Math.round(v*100):Math.round(v);
+  const s=String(v).trim().replace(',','.').replace('+/-','0').replace('±','0');
+  const n=parseFloat(s.replace(/[^0-9+\-.]/g,''));
+  if(!Number.isFinite(n))return null;
+  return /\bm\b/i.test(s)&&!(/cm/i.test(s))?Math.round(n*100):Math.round(n);
 }
-function roundTo5(value){return Math.round(Number(value)/5)*5}
-function addNorderneyCurveEstimate(date,type,levelCm,time=''){
-  const dt=parseGermanDate(date,'12:00'); if(!dt)return;
-  const key=localKey(dt),base=type==='HW'?NORDERNEY_MHW_CM:NORDERNEY_MNW_CM;
-  if(!liveWater.norderney[key])liveWater.norderney[key]=[];
-  // Wenn für denselben ungefähren Zeitpunkt ein exakter Tabellenwert existiert, diesen bevorzugen.
-  const approxMinutes=t=>{const m=String(t||'').match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):null};
-  const target=approxMinutes(time);
-  if(liveWater.norderney[key].some(x=>x.type===type&&!x.approx&&target!==null&&approxMinutes(x.time)!==null&&Math.abs(approxMinutes(x.time)-target)<=90))return;
-  if(liveWater.norderney[key].some(x=>x.type===type&&x.approx&&x.time===time))return;
-  const roundedLevel=roundTo5(levelCm),deltaCm=roundTo5(roundedLevel-base);
-  liveWater.norderney[key].push({type,time,deltaCm,levelCm:roundedLevel,approx:true});
+function bshLocalDate(ts){const d=new Date(ts);return Number.isNaN(d.getTime())?null:d}
+function addBshForecastEvent(dt,type,levelCm,deltaCm,approx=false){
+  if(!(dt instanceof Date)||Number.isNaN(dt.getTime()))return;
+  const key=localKey(dt);
+  if(!liveWater.bshForecast[key])liveWater.bshForecast[key]=[];
+  const time=dt.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  const target=dt.getTime();
+  // Exakte Scheitelwerte ersetzen Kurvenwerte in einem Zeitfenster von 90 Minuten.
+  const nearIndex=liveWater.bshForecast[key].findIndex(x=>x.type===type&&Math.abs(x.ts-target)<=90*60000);
+  const ev={type,time,ts:target,levelCm:Number(levelCm),deltaCm:Number(deltaCm),approx};
+  if(nearIndex>=0){
+    const old=liveWater.bshForecast[key][nearIndex];
+    if(old.approx&&!approx)liveWater.bshForecast[key][nearIndex]=ev;
+    else if(old.approx===approx&&Math.abs(ev.ts-target)<Math.abs(old.ts-target))liveWater.bshForecast[key][nearIndex]=ev;
+    return;
+  }
+  liveWater.bshForecast[key].push(ev);
 }
-function parseBshForecastText(text){
-  const src=String(text||'').replace(/−/g,'-').replace(/\u00a0/g,' ');
-  let currentDate='';
-  const lines=src.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  for(const line of lines){
-    const dm=line.match(/(\d{1,2}\.\d{1,2}\.\d{4})/); if(dm)currentDate=dm[1];
-    const m=line.match(/(?:(\d{1,2}\.\d{1,2}\.\d{4}).*?)?(\d{1,2}:\d{2}).*?\b(HW|NW)\b.*?([+-]?\d+(?:[.,]\d+)?)\s*m\b/i);
-    if(m){
-      const date=m[1]||currentDate; if(!date)continue;
-      const deltaCm=Math.round(parseFloat(m[4].replace(',','.'))*100);
-      addNorderneyPeak(date,m[2],m[3].toUpperCase(),deltaCm);
+function curveExtrema(points,mhw,mnw){
+  const arr=(Array.isArray(points)?points:[]).map(p=>({
+    dt:bshLocalDate(p?.timestamp),
+    value:parseBshNumber(p?.automated_curve_forecast)
+  })).filter(x=>x.dt&&Number.isFinite(x.value)).sort((a,b)=>a.dt-b.dt);
+  const extrema=[];let last=null;
+  for(let i=1;i<arr.length-1;i++){
+    const a=arr[i-1],b=arr[i],c=arr[i+1];
+    const isMax=a.value<b.value&&b.value>=c.value;
+    const isMin=a.value>b.value&&b.value<=c.value;
+    if(!isMax&&!isMin)continue;
+    const type=isMax?'HW':'NW',base=isMax?mhw:mnw;
+    const ev={dt:b.dt,type,value:b.value,delta:Number.isFinite(base)?b.value-base:null};
+    if(last&&Math.abs(ev.dt-last.dt)<45*60000){
+      const stronger=(type==='HW'&&ev.value>last.value)||(type==='NW'&&ev.value<last.value);
+      if(type===last.type&&stronger){extrema[extrema.length-1]=ev;last=ev}
+      continue;
+    }
+    extrema.push(ev);last=ev;
+  }
+  return extrema;
+}
+function bshApiParts(json){
+  // Toleranter Parser: funktioniert auch bei FeatureCollection-/Proxy-Antworten
+  // oder wenn Teile der Antwort als JSON-String eingebettet sind.
+  let hwlw=[],curve=[],properties=[];
+  const seen=new Set();
+  function walk(v,depth=0){
+    if(v==null||depth>10)return;
+    if(typeof v==='string'){
+      const t=v.trim();
+      if((t.startsWith('{')||t.startsWith('['))&&t.length>2){try{walk(JSON.parse(t),depth+1)}catch{}}
+      return;
+    }
+    if(typeof v!=='object'||seen.has(v))return;
+    seen.add(v);
+    if(Array.isArray(v)){
+      if(v.some(x=>x&&typeof x==='object'&&('event_timestamp' in x)&&('event' in x)))hwlw.push(...v);
+      if(v.some(x=>x&&typeof x==='object'&&('timestamp' in x)&&(('automated_curve_forecast' in x)||('tidal_prediction' in x))))curve.push(...v);
+      for(const x of v)walk(x,depth+1);
+      return;
+    }
+    if('mean_high_water' in v||'mean_low_water' in v||'forecast_timestamp' in v||'automated_curveforecast_timestamp' in v)properties.push(v);
+    for(const [k,val] of Object.entries(v)){
+      if(k==='high_water_low_water'&&Array.isArray(val))hwlw.push(...val);
+      if(k==='curve'&&Array.isArray(val))curve.push(...val);
+      if(k==='properties'&&val&&typeof val==='object'&&!Array.isArray(val))properties.push(val);
+      walk(val,depth+1);
     }
   }
+  walk(json);
+  const uniq=(arr,keyfn)=>{const out=[],keys=new Set();for(const x of arr){const k=keyfn(x);if(!keys.has(k)){keys.add(k);out.push(x)}}return out};
+  hwlw=uniq(hwlw,x=>`${x?.event_timestamp||''}|${x?.event||''}|${x?.forecast_value??x?.mos_forecast_r0_value??''}`);
+  curve=uniq(curve,x=>`${x?.timestamp||''}|${x?.automated_curve_forecast??x?.tidal_prediction??''}`);
+  return {hwlw,curve,properties};
 }
-function seedScreenshotForecast(){
-  // Exakte Scheitelwerte aus der BSH-Tabelle im Nutzer-Screenshot (Stand 14.08.2026 19:09).
-  addNorderneyPeak('14.08.2026','20:11','NW',-30);
-  addNorderneyPeak('15.08.2026','02:12','HW',20);
-  addNorderneyPeak('15.08.2026','08:19','NW',-10);
-  addNorderneyPeak('15.08.2026','14:13','HW',50);
-
-  // BSH-Wochenkurve Norderney Riffgat, Grafik aktualisiert 17.08.2026 10:37.
-  // Auf ca. 5 cm gerundet; Uhrzeiten aus der Kurve auf ca. 15–30 min geschätzt.
-  // Alle sichtbaren Scheitel bis Samstag werden gezeigt; exakte BSH-Tabellenwerte haben Vorrang.
-  const curve=[
-    ['17.08.2026','HW',665,'15:30'],['17.08.2026','NW',360,'22:00'],
-    ['18.08.2026','HW',625,'04:00'],['18.08.2026','NW',365,'10:00'],['18.08.2026','HW',645,'16:00'],['18.08.2026','NW',385,'22:00'],
-    ['19.08.2026','HW',635,'04:00'],['19.08.2026','NW',410,'10:00'],['19.08.2026','HW',660,'16:15'],['19.08.2026','NW',400,'22:00'],
-    ['20.08.2026','HW',620,'04:00'],['20.08.2026','NW',395,'10:00'],['20.08.2026','HW',635,'17:00'],['20.08.2026','NW',415,'23:30'],
-    ['21.08.2026','HW',615,'04:30'],['21.08.2026','NW',410,'11:30'],['21.08.2026','HW',615,'17:30'],['21.08.2026','NW',420,'23:45'],
-    ['22.08.2026','HW',605,'05:15'],['22.08.2026','NW',420,'12:00'],['22.08.2026','HW',600,'18:30']
-  ];
-  curve.forEach(([d,t,l,tm])=>addNorderneyCurveEstimate(d,t,l,tm));
+function firstBshNumber(obj,names){
+  for(const name of names){const n=parseBshNumber(obj?.[name]);if(Number.isFinite(n))return n}
+  return null;
 }
-async function loadNorderneyForecast(){
-  liveWater.norderney={}; seedScreenshotForecast();
-  const urls=[NORDERNEY_FORECAST_URL,`https://r.jina.ai/http://wasserstand.bsh.de/norderney_riffgat`];
-  for(const url of urls){
-    try{
-      const r=await fetch(url,{cache:'no-store'}); if(!r.ok)throw new Error(`HTTP ${r.status}`);
-      parseBshForecastText(await r.text());
-      if(Object.keys(liveWater.norderney).length){liveWater.norderneyError=false;return}
-    }catch(err){console.warn('Norderney-Vorhersage konnte über',url,'nicht geladen werden',err)}
+function firstMosForecast(ev){
+  for(let n=0;n<=5;n++){
+    const level=parseBshNumber(ev?.[`mos_forecast_r${n}_value`]);
+    if(Number.isFinite(level)){
+      const delta=parseBshDeviationCm(ev?.[`mos_forecast_r${n}_deviation`]);
+      return {level,delta,run:`r${n}`};
+    }
   }
-  liveWater.norderneyError=true;
+  return {level:null,delta:null,run:null};
+}
+async function loadBshLangeoogForecast(){
+  liveWater.bshForecast={};
+  liveWater.bshForecastErrorDetail='';
+  try{
+    const r=await fetch(LANGEOOG_BSH_API_URL,{cache:'no-store'});
+    if(!r.ok)throw new Error(`BSH HTTP ${r.status}`);
+    const json=await r.json();
+    const {hwlw,curve,properties}=bshApiParts(json);
+    const p=properties.find(x=>Number.isFinite(parseBshNumber(x?.mean_high_water))||Number.isFinite(parseBshNumber(x?.mean_low_water)))||properties[0]||json?.properties||{};
+    const mhw=firstBshNumber(p,['mean_high_water']),mnw=firstBshNumber(p,['mean_low_water']);
+    liveWater.bshMeanHW=mhw;liveWater.bshMeanNW=mnw;
+
+    for(const ev of hwlw){
+      const dt=bshLocalDate(ev?.event_timestamp);if(!dt)continue;
+      const type=String(ev?.event||'').toUpperCase();if(type!=='HW'&&type!=='NW')continue;
+      const base=type==='HW'?mhw:mnw;
+      let level=parseBshNumber(ev?.forecast_value);
+      let delta=parseBshDeviationCm(ev?.forecast_deviation);
+      let approx=false;
+      if(!Number.isFinite(level)){
+        const mos=firstMosForecast(ev);
+        level=mos.level;
+        if(!Number.isFinite(delta))delta=mos.delta;
+        approx=Number.isFinite(level);
+      }
+      if(!Number.isFinite(level))level=parseBshNumber(ev?.tidal_prediction_value);
+      if(!Number.isFinite(level)&&Number.isFinite(base)&&Number.isFinite(delta))level=base+delta;
+      if(!Number.isFinite(delta)&&Number.isFinite(level)&&Number.isFinite(base))delta=level-base;
+      if(Number.isFinite(level))addBshForecastEvent(dt,type,level,delta,approx);
+    }
+
+    // Wochenkurve ergänzt die Folgetage. Exakte Scheitelwerte/MOS bleiben vorrangig.
+    for(const ev of curveExtrema(curve,mhw,mnw)){
+      if(Number.isFinite(ev.value))addBshForecastEvent(ev.dt,ev.type,ev.value,ev.delta,true);
+    }
+    for(const arr of Object.values(liveWater.bshForecast))arr.sort((a,b)=>a.ts-b.ts);
+
+    const stampOwner=properties.find(x=>x?.forecast_timestamp||x?.automated_curveforecast_timestamp)||p;
+    liveWater.bshForecastAt=stampOwner?.forecast_timestamp||stampOwner?.automated_curveforecast_timestamp||null;
+    liveWater.bshForecastError=Object.keys(liveWater.bshForecast).length===0;
+    if(liveWater.bshForecastError){
+      liveWater.bshForecastErrorDetail=`BSH-Antwort erhalten, aber keine verwertbaren Scheitel/Kurvenwerte gefunden (HW/NW: ${hwlw.length}, Kurve: ${curve.length}).`;
+      console.warn(liveWater.bshForecastErrorDetail,json);
+    }
+  }catch(err){
+    console.warn('BSH-Langeoog-Vorhersage konnte nicht geladen werden',err);
+    liveWater.bshForecastError=true;
+    liveWater.bshForecastErrorDetail=err?.message||String(err);
+  }
 }
 let webDataUpdatedAt=null;
 function webRefreshStandHtml(){
@@ -1630,16 +1709,16 @@ function waterInfoHtml(key,isToday){
       parts.push(`<span class="water-item current nodata"><span class="water-light">⚪</span><span class="water-label">Aktuell</span><span class="water-value">Langeoog nicht geladen</span><span class="water-source">PEGELONLINE</span></span>`);
     }else parts.push(`<span class="water-item current nodata"><span class="water-light">⚪</span><span class="water-label">Aktuell</span><span class="water-value">Langeoog wird geladen …</span></span>`);
   }
-  const peaks=(liveWater.norderney[key]||[]).slice().sort((a,b)=>String(a.time||'99:99').localeCompare(String(b.time||'99:99')));
+  const peaks=(liveWater.bshForecast[key]||[]).slice().sort((a,b)=>a.ts-b.ts);
   if(peaks.length){
     const rows=peaks.map(f=>{
       const when=f.time?`${f.type} ${f.approx?'ca. ':''}${f.time}`:`${f.type} ca.`;
-      const approx=f.approx?'<span class="water-source">Kurve · ca. 5–10 cm</span>':'';
+      const approx=f.approx?'<span class="water-source">BSH-Kurve · automatisch</span>':'';
       return `<span class="water-peak"><span class="water-light">${forecastLight(Number(f.deltaCm))}</span><b>${when}</b> · ${formatMetres(f.levelCm)} · <b>${formatDelta(Number(f.deltaCm))}</b>${approx}</span>`;
     }).join('<span class="water-sep">&nbsp;&nbsp;</span>');
-    parts.push(`<span class="water-item forecast" title="BSH Norderney Riffgat · Scheitelwertvorhersage"><span class="water-label">Vorhersage</span><span class="water-value">Norderney</span>${rows}<a class="water-link" href="${NORDERNEY_FORECAST_URL}" target="_blank" rel="noopener noreferrer">BSH ↗</a>${webRefreshControlHtml()}</span>`);
+    parts.push(`<span class="water-item forecast" title="BSH Langeoog, Hafeneinfahrt · offizielle Wasserstandsvorhersage"><span class="water-label">Vorhersage</span><span class="water-value">Langeoog</span>${rows}<a class="water-link" href="${LANGEOOG_FORECAST_URL}" target="_blank" rel="noopener noreferrer">BSH ↗</a>${webRefreshControlHtml()}</span>`);
   }else{
-    parts.push(`<span class="water-item forecast nodata"><span class="water-light">⚪</span><span class="water-label">Vorhersage</span><a class="water-link" href="${NORDERNEY_FORECAST_URL}" target="_blank" rel="noopener noreferrer">Norderney · BSH ↗</a><span class="water-source">${fmtDate(new Date(key+'T12:00:00'))} · keine Scheitelwerte geladen</span>${webRefreshControlHtml()}</span>`);
+    parts.push(`<span class="water-item forecast nodata"><span class="water-light">⚪</span><span class="water-label">Vorhersage</span><a class="water-link" href="${LANGEOOG_FORECAST_URL}" target="_blank" rel="noopener noreferrer">Langeoog · BSH ↗</a><span class="water-source">${fmtDate(new Date(key+'T12:00:00'))} · ${liveWater.bshForecastErrorDetail?`BSH: ${liveWater.bshForecastErrorDetail}`:'keine BSH-Vorhersage geladen'}</span>${webRefreshControlHtml()}</span>`);
   }
   return `<div class="water-info">${parts.join('')}</div>`;
 }
@@ -1671,7 +1750,7 @@ async function loadLangeoogCurrent(){
   if(document.getElementById('weekGrid'))render();
 }
 async function loadLiveWater(){
-  await Promise.all([loadLangeoogCurrent(),loadNorderneyForecast()]);
+  await Promise.all([loadLangeoogCurrent(),loadBshLangeoogForecast()]);
   liveWater.loadedAt=Date.now();
   if(document.getElementById('weekGrid'))render();
 }
@@ -1861,7 +1940,9 @@ function render(){
   $('displayYearTop').textContent=displayYear;
   $('savedCalendarDays').textContent=calendarDaysForTrips(savedYearTrips);
   const fixedHours=savedYearTrips.reduce((sum,t)=>sum+(Math.min(new Date(t.in),yearEnd)-Math.max(new Date(t.out),yearStart))/3600000,0);
+  const totalHours=yearTrips.reduce((sum,t)=>sum+(Math.min(new Date(t.in),yearEnd)-Math.max(new Date(t.out),yearStart))/3600000,0);
   $('savedHours').textContent=fixedHours.toFixed(1).replace('.',',');
+  const totalHoursEl=$('totalHoursPlanned');if(totalHoursEl)totalHoursEl.textContent=totalHours.toFixed(1).replace('.',',');
 
   const s=settings(),target=s.goalDays+s.reserveDays;
   $('savedGoalMissing').textContent=Math.max(0,target-savedYearBlocks.length);
