@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logbuch-Wochenplaner v0.15.87</title>
+<title>Logbuch-Wochenplaner v0.15.91</title>
 <style>
 :root{--navy:#123B63;--navy2:#0B2A46;--teal:#0D7C86;--bg:#F3F6FA;--card:#fff;--text:#17324D;--muted:#6A7E91;--line:#D7E0E8;--green:#2F855A;--green2:#1F6B45;--greenbg:#E3F3E9;--red:#C23B3B;--redbg:#FBE7E7;--amber:#D99A17;--amberbg:#FFF3D6;--input:#FFF1A8;--blue:#145c9e;--purple:#6b3fa0}
 *{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -196,6 +196,18 @@ button,input,select{font:inherit}button{border:0;border-radius:8px;padding:9px 1
 .deck-dialog-actions{display:grid;grid-template-columns:1fr;gap:9px}.deck-dialog-actions button{width:100%;text-align:left;padding:12px 14px}
 .deck-dialog-actions small{display:block;font-weight:700;opacity:.8;margin-top:3px}.deck-share-unsupported{opacity:.5;pointer-events:none}
 
+
+/* Globale Reisesuche */
+.trip-search{position:relative;display:flex;align-items:center;gap:5px;min-width:245px;flex:1;max-width:440px}
+.trip-search input{box-sizing:border-box;width:100%;padding:9px 11px;border:1px solid #bdcedd;border-radius:8px;font:inherit;background:#fff;color:#12304c}
+.trip-search-results{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:300;background:white;border:1px solid #bdcedd;border-radius:9px;box-shadow:0 8px 25px #112a4560;max-height:340px;overflow:auto}
+.trip-search-results.hidden{display:none}
+.trip-search-result{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #e5edf3;background:white;padding:10px 12px;cursor:pointer;color:#17344e;font:inherit}
+.trip-search-result:hover,.trip-search-result:focus{background:#eaf5f6}
+.trip-search-result small{display:block;color:#61778b;margin-top:3px}
+.trip-search-empty{padding:12px;color:#61778b}
+.trip-search-highlight{outline:3px solid #e2a62d!important;outline-offset:3px}
+@media(max-width:650px){.trip-search{order:3;flex-basis:100%;max-width:none}}
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script type="module">
@@ -286,7 +298,7 @@ window.dispatchEvent(new Event("logbuch-firebase-ready"));
 
 </head><body>
 <header>
-<div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.87</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div>
+<div class="header-main"><h1>⚓ Logbuch-Wochenplaner – Basis v0.15.91</h1><p>Wochenplanung Sonntag bis Samstag · mehrere Reisen in einer Zeitleiste · dynamische 24‑Stunden‑Blöcke</p></div>
 <div class="header-actions">
   <div id="cloudBox" class="cloud-box">
     <div id="cloudStatus" class="cloud-status"><b>☁ Online-Speicher</b><span>Nicht angemeldet</span></div>
@@ -300,6 +312,7 @@ window.dispatchEvent(new Event("logbuch-firebase-ready"));
 <div class="view-tabs">
   <button class="view-tab active" id="showPlanning">Planung</button>
   <button class="view-tab" id="showArchive">Reise-Archiv</button>
+  <div class="trip-search" id="tripSearchWrap"><input id="tripSearchInput" type="search" autocomplete="off" placeholder="🔎 DEU-Nr., Datum oder Reise (R65) …" aria-label="Reise in allen Jahren suchen"><div id="tripSearchResults" class="trip-search-results hidden" role="listbox"></div></div>
   <span class="view-year">📅 Jahr: <b id="displayYearTop">–</b></span>
 </div>
 <div id="planningView">
@@ -956,14 +969,22 @@ function normalizeExcelHeader(value){
     .replace(/ß/g,'ss')
     .replace(/[^a-z0-9]+/g,' ');
 }
+// vCatch liefert UTC-Zeitangaben. Excel-Datumszellen besitzen selbst keine Zeitzone.
+// Deshalb die aus Excel gelesenen Kalenderfelder als UTC interpretieren.
+// Die Anzeige erfolgt anschließend über die lokale Zeitzone (in Deutschland MEZ/MESZ).
+function excelUtcDate(y,m,d,h=0,min=0,sec=0){
+  return new Date(Date.UTC(Number(y),Number(m)-1,Number(d),Number(h),Number(min),Number(sec)));
+}
 function excelCellToDate(value){
   if(value instanceof Date&&!isNaN(value)){
-    return new Date(value.getFullYear(),value.getMonth(),value.getDate(),value.getHours(),value.getMinutes(),value.getSeconds());
+    // SheetJS kann Excel-Zellen bereits als Date-Objekte liefern; deren
+    // Falls eine fremde Quelle Date-Objekte liefert, die sichtbaren Excel-Kalenderfelder als UTC interpretieren.
+    return excelUtcDate(value.getFullYear(),value.getMonth()+1,value.getDate(),value.getHours(),value.getMinutes(),value.getSeconds());
   }
   if(typeof value==='number'&&Number.isFinite(value)){
     const parsed=XLSX?.SSF?.parse_date_code(value);
     if(!parsed)return null;
-    return new Date(parsed.y,parsed.m-1,parsed.d,parsed.H||0,parsed.M||0,Math.round(parsed.S||0));
+    return excelUtcDate(parsed.y,parsed.m,parsed.d,parsed.H||0,parsed.M||0,Math.round(parsed.S||0));
   }
   if(typeof value==='string'){
     const s=value.trim();
@@ -971,10 +992,16 @@ function excelCellToDate(value){
     const german=s.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2}|\d{4})(?:[ T](\d{1,2})(?::(\d{1,2}))?(?::(\d{1,2}))?)?$/);
     if(german){
       let year=Number(german[3]);if(year<100)year+=2000;
-      return new Date(year,Number(german[2])-1,Number(german[1]),Number(german[4]||0),Number(german[5]||0),Number(german[6]||0));
+      return excelUtcDate(year,german[2],german[1],german[4]||0,german[5]||0,german[6]||0);
     }
-    const d=new Date(s);
-    return isNaN(d)?null:d;
+    // ISO-Werte mit expliziter Zeitzone bereits als absolute Zeit behandeln.
+    if(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(s)){
+      const absolute=new Date(s);return isNaN(absolute)?null:absolute;
+    }
+    // ISO-Werte ohne Zeitzonenangabe stammen bei vCatch ebenfalls aus UTC.
+    const iso=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2})(?::(\d{1,2}))?(?::(\d{1,2}))?)?$/);
+    if(iso)return excelUtcDate(iso[1],iso[2],iso[3],iso[4]||0,iso[5]||0,iso[6]||0);
+    return null;
   }
   return null;
 }
@@ -982,7 +1009,7 @@ function findExcelTripSheet(workbook){
   for(const sheetName of workbook.SheetNames){
     const worksheet=workbook.Sheets[sheetName];
     const rows=XLSX.utils.sheet_to_json(worksheet,{header:1,raw:true,defval:null});
-    const maxHeaderRows=Math.min(rows.length,20);
+    const maxHeaderRows=Math.min(rows.length,150);
     for(let rowIndex=0;rowIndex<maxHeaderRows;rowIndex++){
       const headers=(rows[rowIndex]||[]).map(normalizeExcelHeader);
       const outCol=headers.findIndex(h=>h.includes('ausfahrt')||h.includes('auslaufen')||h==='abfahrt');
@@ -1077,7 +1104,7 @@ function importExcelTrips(file){
   const reader=new FileReader();
   reader.onload=()=>{
     try{
-      const workbook=XLSX.read(reader.result,{type:'array',cellDates:true});
+      const workbook=XLSX.read(reader.result,{type:'array',cellDates:false});
       const found=findExcelTripSheet(workbook);
       if(!found)throw new Error('Keine passenden Spalten für Ausfahrt/Auslaufen und Rückkehr/Einlaufen gefunden.');
 
@@ -2233,4 +2260,55 @@ if(window.LogbuchFirebase){
 }
 const today=new Date();const min=new Date('2026-07-15T12:00:00'),max=new Date('2026-12-31T12:00:00');const base=today<min?min:today>max?max:today;$('weekStart').value=localKey(sundayOf(base));render();
 refreshWebData(false);setInterval(loadLangeoogCurrent,5*60*1000);setInterval(()=>{if(document.getElementById('weekGrid'))render();},60*1000);setInterval(loadWindAndSea,30*60*1000);
+
+// Globale Suche über alle vorhandenen Reisen; nur Navigation, keine Datenänderung.
+(function setupGlobalTripSearch(){
+  const input=document.getElementById('tripSearchInput'), results=document.getElementById('tripSearchResults');
+  if(!input||!results)return;
+  const escapeText=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const dateText=d=>{const x=new Date(d);return String(x.getDate()).padStart(2,'0')+'.'+String(x.getMonth()+1).padStart(2,'0')+'.'+x.getFullYear()};
+  const timeText=d=>{const x=new Date(d);return String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0')};
+  function matchingTrips(q){
+    const raw=q.trim().toLowerCase();if(!raw)return [];
+    const compact=raw.replace(/[^a-z0-9]/g,'');
+    return trips.filter(t=>{
+      const date=dateText(t.out),iso=localKey(new Date(t.out)),number='r'+String(t.number??'');
+      const deu=String(t.deu??t.deuNr??t.deuNumber??'').toLowerCase();
+      const dateDigits=date.replace(/\D/g,'');
+      const dateSearch=raw.replace(/\s/g,'');
+      return (deu&&deu.replace(/[^a-z0-9]/g,'').includes(compact)) ||
+        (number!=='r'&&(number===compact||('reise'+String(t.number))===compact)) ||
+        date.includes(dateSearch)||iso.includes(dateSearch)||dateDigits.includes(compact)||
+        (String(t.number??'')===compact&&compact.length>0);
+    }).sort((a,b)=>new Date(b.out)-new Date(a.out)).slice(0,60);
+  }
+  function showMatches(){
+    const q=input.value.trim();if(!q){results.classList.add('hidden');results.innerHTML='';return;}
+    renumber();const matches=matchingTrips(q);
+    results.innerHTML=matches.length?matches.map(t=>`<button type="button" class="trip-search-result" data-search-trip="${escapeText(t.id)}"><b>R${escapeText(t.number??'–')} · ${escapeText(t.deu??t.deuNr??t.deuNumber??'ohne DEU-Nr.')}</b><small>${dateText(t.out)} ${timeText(t.out)} – ${dateText(t.in)} ${timeText(t.in)} · ${t.locked?'gespeichert':'geplant'}</small></button>`).join(''):'<div class="trip-search-empty">Keine passende Reise gefunden.</div>';
+    results.classList.remove('hidden');
+  }
+  function goToTrip(id){
+    const t=tripById(id);if(!t)return;
+    input.value='';results.classList.add('hidden');
+    selectedTripId=id;
+    document.getElementById('weekStart').value=localKey(sundayOf(new Date(t.out)));
+    dayViews={};
+    document.getElementById('planningView').classList.remove('hidden');
+    document.getElementById('archiveView').classList.add('hidden');
+    document.getElementById('showPlanning').classList.add('active');
+    document.getElementById('showArchive').classList.remove('active');
+    render();
+    setTimeout(()=>{
+      const el=[...document.querySelectorAll('.trip[data-id]')].find(x=>x.dataset.id===id);
+      if(el){el.classList.add('trip-search-highlight');el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>el.classList.remove('trip-search-highlight'),3500)}
+      else document.getElementById('weekGrid').scrollIntoView({behavior:'smooth',block:'start'});
+    },80);
+  }
+  input.addEventListener('input',showMatches);
+  input.addEventListener('focus',showMatches);
+  input.addEventListener('keydown',e=>{if(e.key==='Escape')results.classList.add('hidden');if(e.key==='Enter'){const first=results.querySelector('[data-search-trip]');if(first){e.preventDefault();goToTrip(first.dataset.searchTrip)}}});
+  results.addEventListener('click',e=>{const btn=e.target.closest('[data-search-trip]');if(btn)goToTrip(btn.dataset.searchTrip)});
+  document.addEventListener('click',e=>{if(!document.getElementById('tripSearchWrap').contains(e.target))results.classList.add('hidden')});
+})();
 </script></body></html>
